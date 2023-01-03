@@ -57,15 +57,19 @@ def get_entity_json(char_json):
 def get_claims(entity):
     entity_id = entity.get("id")
     entity_dict = entity.get("entities").get(entity_id)
-    entity_title = entity_dict.get("sitelinks").get("eswiki", {}).get("title", "None")    
-    char_claims = []
-    char_claims.append({"title": entity_title})
+    entity_title = entity_dict.get("sitelinks").get("eswiki", {}).get("title", "None")
+    char_claims = dict()
+    char_claims["title"] = entity_title
     for claim_k, claim_v in CLAIMS.items():
         snaks = entity_dict.get("claims").get(claim_v)
+        id_list = []
         for snak in snaks:
             claim_id = snak.get("mainsnak").get("datavalue").get("value").get("id")
-            key_info = {claim_k: claim_id}
-            char_claims.append(key_info)    
+            if len(snaks) > 1:
+                id_list.append(claim_id)
+            else:
+                id_list = claim_id
+        char_claims[claim_k] =  id_list
     return char_claims
 
 
