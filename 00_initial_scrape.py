@@ -56,37 +56,23 @@ def get_entity_json(char_json):
 entities = [get_entity_json(i) for i in results]
 
 
-entity_title = (
-    entities[1]
-    .get("entities")
-    .get(entities[1].get("id"))
-    .get("sitelinks")
-    .get("eswiki", {})
-    .get("title", "None")
-)
-
-char_claims = []
-
-for claim_k, claim_v in CLAIMS.items():
-    snaks = (
-        entities[1]
-        .get("entities")
-        .get(entities[1].get("id"))
-        .get("claims")
-        .get(claim_v)
-    )
-    for snak in snaks:
-        key_info = {
-            claim_k: (
-                snak
-                .get("mainsnak")
-                .get("datavalue")
-                .get("value")
-                .get("id")
-            )
-        }
+def get_claims(entity):
+    entity_id = entity.get("id")
+    entity_dict = entity.get("entities").get(entity_id)
+    entity_title = entity_dict.get("sitelinks").get("eswiki", {}).get("title", "None")
+    
+    char_claims = []
+    char_claims.append({"title": entity_title})
+    for claim_k, claim_v in CLAIMS.items():
+        snaks = entity_dict.get("claims").get(claim_v)
+        for snak in snaks:
+            claim_id = snak.get("mainsnak").get("datavalue").get("value").get("id")
+            key_info = {claim_k: claim_id}
         char_claims.append(key_info)
-        
+    
+    return char_claims
+
+char_claims = [get_claims(i) for i in entities]
 char_claims
 
 sp_value = [i.get("superpoder") for i in char_claims if i.get("superpoder") is not None]
