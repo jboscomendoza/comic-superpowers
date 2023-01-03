@@ -17,7 +17,7 @@ ENTITIES_PARAMS = (
     "&sitefilter=eswiki" +
     "&ids="
     )
- 
+
 CLAIMS = {
     "genero":"P21",
     "superpoder":"P2563",
@@ -27,7 +27,7 @@ CLAIMS = {
 
 
 def get_query_json(query):
-    query_url  = BASE_URL + QUERY_PARAMS + query_term    
+    query_url  = BASE_URL + QUERY_PARAMS + query_term
     query_resp = requests.get(query_url)
     query_json = query_resp.json()
     return query_json
@@ -73,21 +73,21 @@ def get_claims(entity):
     return char_claims
 
 
-def get_sp_json(sp_list):
-    sp_ids = "|".join(sp_list)
-    sp_url = BASE_URL + ENTITIES_PARAMS + sp_ids
+def get_sp_data(char_claims):
+    sp_ids = char_claims["superpoder"]
+    sp_str = "|".join(sp_ids)
+    sp_url = BASE_URL + ENTITIES_PARAMS + sp_str
     sp_resp = requests.get(sp_url)
     sp_json = sp_resp.json()
-    return sp_json
-
-
-def get_sp_data(sp_id, sp_json):
-    sp_entity = sp_json.get("entities").get(sp_id)
-    sp_dict = dict(
-        sp_data = sp_entity.get("labels").get("es").get("value"),
-        sp_id = sp_entity.get("descriptions").get("es").get("value")
+    sp_data = dict()
+    for i in  sp_ids:
+        sp_entity = sp_json.get("entities").get(i)
+        sp_dict = dict(
+            name=sp_entity.get("labels").get("es").get("value"),
+            desc=sp_entity.get("descriptions").get("es").get("value")
         )
-    return sp_dict
+        sp_data[i] = sp_dict
+    return sp_data
 
 
 query_term  = "Emma frost Marvel"
@@ -95,17 +95,9 @@ query_json  = get_query_json(query_term)
 char_json   = get_char_json(query_json)
 entities    = [get_entity_json(i) for i in char_json]
 char_claims = [get_claims(i) for  i in entities]
-sp_value = []
-for claim in char_claims:
-    sp_entity = []
-    for i in claim:
-        try:
-            sp_entity.append(i["superpoder"])
-        except:
-            pass
-    sp_value.append(sp_entity)
-sp_json = [get_sp_json(i) for i in sp_value]
-sp_data = []
-for i in range(len(sp_json)):
-    sp_data.append([get_sp_data(sp, sp_json[i]) for sp in sp_value[i]])
-sp_data
+sp_data     = [get_sp_data(i) for i in char_claims]
+chars = []
+for claim, sp in zip(char_claims, sp_data):
+    claim["detalles"] = sp_data
+    chars.append(claim)
+chars
