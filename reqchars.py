@@ -42,6 +42,7 @@ def get_query_json(query_term):
  
  
 def get_char_json(json_data):
+    """Site is one of wikidata or wikipedia"""
     results = []
     for i in json_data["query"]["search"]:
         char_id = i["title"]
@@ -52,8 +53,20 @@ def get_char_json(json_data):
         results.append(char_json)
     return results
 
-       
-def get_entity_json(char_json):
+
+def get_entity(entity_str:str, type:str):
+    """type: One of 'id' or 'title', for querying wikidata or wikipedia, respectively."""
+    if  type == "id":
+        entity_url = BASE_URL + PARAMS_ENTITY + WIKIDATA + entity_str
+    elif type == "title":
+        entity_url = BASE_URL + PARAMS_ENTITY + WIKIPEDIA + entity_str
+    entity_resp = requests.get(entity_url)
+    entity_json = entity_resp.json()
+    entity_json["id"] = entity_str
+    return entity_json
+
+
+def get_entity_json(char_json:dict):
     entity_id = char_json["id"]
     entity_url = BASE_URL + PARAMS_ENTITY + WIKIDATA + entity_id
     entity_resp = requests.get(entity_url)
@@ -62,21 +75,28 @@ def get_entity_json(char_json):
     return entity_json
 
 
-def get_claims(entity):
-    entity_id = entity.get("id")
-    entity_dict = entity.get("entities").get(entity_id)
-    entity_title = entity_dict.get("sitelinks").get("eswiki", {}).get("title", "None")
+def get_claims(entity, entity_title=None):
+    if entity_title is None:
+        entity_id = entity.get("id")
+        entity_dict = entity.get("entities").get(entity_id)
+        entity_title = entity_dict.get("sitelinks").get("eswiki", {}).get("title", "None")
+    else: 
+        entity_id = [str(i) for i in entity.get("entities").keys()][0]
+        entity_dict = entity.get("entities").get(entity_id)
     char_claims = dict()
     char_claims["title"] = entity_title
     for claim_k, claim_v in CLAIMS.items():
         snaks = entity_dict.get("claims").get(claim_v)
         id_list = []
-        for snak in snaks:
-            claim_id = snak.get("mainsnak").get("datavalue").get("value").get("id")
-            if len(snaks) > 1:
-                id_list.append(claim_id)
-            else:
-                id_list = claim_id
+        if snaks is not None:
+            for snak in snaks:
+                claim_id =  snak.get("mainsnak").get("datavalue").get("value").get("id")
+                if len(snaks) > 1:
+                    id_list.append(claim_id)
+                else:
+                    id_list = claim_id
+        else:
+            pass
         char_claims[claim_k] =  id_list
     return char_claims
 
