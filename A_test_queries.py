@@ -9,9 +9,10 @@ entities    = [rc.get_entity_json(i) for i in char_json]
 char_claims = [rc.get_claims(i) for  i in entities]
 sp_data     = [rc.get_sp_data(i) for i in char_claims]
 chars = []
-for claim, sp in zip(char_claims, sp_data):
+for claim, sp in zip(char_claims[0], sp_data[0]):
     claim["detalles"] = sp_data
     chars.append(claim)
+    sp
 chars
 
 # by title
@@ -19,3 +20,5 @@ exact_title = "Gambit_(Marvel_Comics)"
 ent = rc.get_entity(exact_title, type="title")
 ent_claims = rc.get_claims(ent, exact_title)
 ent_sp = rc.get_sp_data(ent_claims)
+ent_claims["detalles"] = [ent_sp]
+ent_claims
