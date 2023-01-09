@@ -72,21 +72,29 @@ def dividir_grupos(lista, cantidad=50):
         divisiones.append(ls)
     return divisiones
 
-gn_grupos = dividir_grupos(gn_unique)
 
-gn_unique_ents = rc.get_entity(gn_grupos[0], "id")
+def props_dict(lista_unicos):
+    unique_list = []
+    grupos = dividir_grupos(lista_unicos)
+    for grp in grupos:
+        unique_ents = rc.get_entity(grp, "id")
+        for i in lista_unicos:
+            props = unique_ents.get("entities").get(i)
+            ent_props = {
+                "id": props.get("id"),
+                "nombre": props.get("labels").get("es", {}).get("value"),
+                "descripcion": props.get("descriptions", {}).get("es", {}).get("value"),
+                "idioma": props.get("descriptions", {}).get("es", {}).get("language"),
+                "wiki_link": props.get("sitelinks", {}).get("eswiki", {}).get("title")
+            }
+            unique_list.append(ent_props)
+    return unique_list
 
-gn_unique_list = []
+gn_df = DataFrame(props_dict(gn_unique))
+un_df = DataFrame(props_dict(un_unique))
+sp_df = DataFrame(props_dict(sp_unique))
+# props_dict(tm_unique)
 
-for i in gn_unique:
-    gn_props = gn_unique_ents.get("entities").get(i)
-    ent_props = {
-        "id": gn_props["id"],
-        "nombre": gn_props["labels"]["es"]["value"],
-        "descripcion": gn_props["descriptions"]["es"]["value"],
-        "idioma": gn_props["descriptions"]["es"]["language"],
-        "wiki_link": gn_props["sitelinks"].get("eswiki", {}).get("title")
-    }
-    gn_unique_list.append(ent_props)
-
-#DataFrame(sp_unique_list).to_csv("superpowers.csv", encoding="utf-8", index=False)
+gn_df.to_csv("genders.csv", encoding="utf-8", index=False)
+un_df.to_csv("universes.csv", encoding="utf-8", index=False)
+sp_df.to_csv("superpowers.csv", encoding="utf-8", index=False)
