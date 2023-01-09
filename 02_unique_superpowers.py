@@ -80,21 +80,24 @@ def props_dict(lista_unicos):
         unique_ents = rc.get_entity(grp, "id")
         for i in lista_unicos:
             props = unique_ents.get("entities").get(i)
-            ent_props = {
-                "id": props.get("id"),
-                "nombre": props.get("labels").get("es", {}).get("value"),
-                "descripcion": props.get("descriptions", {}).get("es", {}).get("value"),
-                "idioma": props.get("descriptions", {}).get("es", {}).get("language"),
-                "wiki_link": props.get("sitelinks", {}).get("eswiki", {}).get("title")
-            }
-            unique_list.append(ent_props)
+            if props is not None:
+                ent_props = {
+                    "id": props.get("id"),
+                    "nombre": props.get("labels").get("es", {}).get("value"),
+                    "descripcion": props.get("descriptions", {}).get("es", {}).get("value"),
+                    "idioma": props.get("descriptions", {}).get("es", {}).get("language"),
+                    "wiki_link": props.get("sitelinks", {}).get("eswiki", {}).get("title")
+                }
+                unique_list.append(ent_props)
     return unique_list
+
 
 gn_df = DataFrame(props_dict(gn_unique))
 un_df = DataFrame(props_dict(un_unique))
 sp_df = DataFrame(props_dict(sp_unique))
-# props_dict(tm_unique)
+tm_df = DataFrame(props_dict(tm_unique))
 
 gn_df.to_csv("genders.csv", encoding="utf-8", index=False)
 un_df.to_csv("universes.csv", encoding="utf-8", index=False)
 sp_df.to_csv("superpowers.csv", encoding="utf-8", index=False)
+tm_df.to_csv("teams.csv", encoding="utf-8", index=False)
