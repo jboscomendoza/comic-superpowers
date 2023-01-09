@@ -63,20 +63,29 @@ sp_unique, gn_unique, tm_unique, un_unique = [
     get_unique(i) for i in [super_power_list, gender_list, teams_list, universe_list]
     ]
 
-gn_groups = "|".join(gn_unique)
+def dividir_grupos(lista, cantidad=50):
+    divisiones = []
+    for i in range(0, len(lista), cantidad):
+        x = i
+        ls = lista[x:x+cantidad]
+        ls = "|".join(ls)
+        divisiones.append(ls)
+    return divisiones
 
-sp_unique_ents = rc.get_entity(gn_groups, "id")
+gn_grupos = dividir_grupos(gn_unique)
+
+gn_unique_ents = rc.get_entity(gn_grupos[0], "id")
 
 gn_unique_list = []
 
-for i in sp_unique:
-    sp_props = sp_unique_ents.get("entities").get(i)
+for i in gn_unique:
+    gn_props = gn_unique_ents.get("entities").get(i)
     ent_props = {
-        "id": sp_props["id"],
-        "nombre": sp_props["labels"]["es"]["value"],
-        "descripcion": sp_props["descriptions"]["es"]["value"],
-        "idioma": sp_props["descriptions"]["es"]["language"],
-        "wiki_link": sp_props["sitelinks"].get("eswiki", {}).get("title")
+        "id": gn_props["id"],
+        "nombre": gn_props["labels"]["es"]["value"],
+        "descripcion": gn_props["descriptions"]["es"]["value"],
+        "idioma": gn_props["descriptions"]["es"]["language"],
+        "wiki_link": gn_props["sitelinks"].get("eswiki", {}).get("title")
     }
     gn_unique_list.append(ent_props)
 
