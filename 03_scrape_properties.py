@@ -121,10 +121,24 @@ char_universe_df = pd.concat(char_universe)
 char_universe_df.to_csv("char_universe.csv", encoding="utf-8", index=False)
 
 
+# Character info
+char_info = []
+
+for x_key, x_val in x_entities.items():
+    c_info = {
+        "id": x_key,
+        "nombre_es": x_val.get("labels", {}).get("es", {}).get("value", ""),
+        "descripcion": x_val.get("descriptions", {}).get("es", {}).get("value", ""),
+        "genero": get_id(x_val, gender)[0],
+        "eswiki": x_val.get("sitelinks", {}).get("eswiki", {}).get("title", "")
+    }
+    char_info.append(c_info)
+
+char_info_df = pd.DataFrame(char_info)
+char_info_df.to_csv("char_info.csv", encoding="utf-8", index=False)
 
 
-
-
+# Properties
 super_power_list = []
 gender_list = []
 teams_list = []
