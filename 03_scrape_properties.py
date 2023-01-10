@@ -1,6 +1,6 @@
 import time
 import reqchars as rc
-from pandas import DataFrame 
+import pandas as pd
 
 
 def get_id(entity, what_id):
@@ -55,19 +55,18 @@ def props_dict(lista_unicos):
                 unique_list.append(ent_props)
     return unique_list
 
+super_power = "P2563"
+gender = "P21"
+teams = "P463"
+universe = "P1080"
+
 
 with open("wiki_links.txt", "r") as links_file:
     x_men = links_file.readlines()
     x_men = [i.rstrip("\n") for i in x_men]
 
-x_men_groups = []
-cuantos = 25
 
-for i in range(0, len(x_men), cuantos):
-    x = i
-    x_men_groups.append(x_men[x:x+cuantos])
-
-x_men_groups = ["|".join(i) for i in x_men_groups]
+x_men_groups = dividir_grupos(x_men, 25)
 
 x_men_ents = []
 
@@ -75,7 +74,7 @@ for x_men_names in x_men_groups:
     entity_group = rc.get_entity(x_men_names, type="title")
     x_men_ents.append(entity_group)
     # Courtesy sleep
-    time.sleep(1)
+    time.sleep(2)
 
 x_entities_all = dict()
 
@@ -87,16 +86,22 @@ x_entities = x_entities_all.copy()
 to_remove = filter(lambda x: len(x) < 4, list(x_entities_all.keys()))
 for i in list(to_remove):
     x_entities.pop(i)
+    
 
-sp_unique = []
+# Character Superpower
+char_sp = []
 
-super_power = "P2563"
+for x_key, x_val in x_entities.items():
+    c_s = pd.DataFrame({"char_id": x_key, "superpoder_id": get_id(x_val, super_power)})
+    char_sp.append(c_s)          
+                     
+char_sp_df = pd.concat(char_sp)
+char_sp_df.to_csv("char_sp.csv", encoding="utf-8", index=False)
+
+
 super_power_list = []
-gender = "P21"
 gender_list = []
-teams = "P463"
 teams_list = []
-universe = "P1080"
 universe_list = []
 
 for i in x_entities.values():
@@ -109,10 +114,10 @@ sp_unique, gn_unique, tm_unique, un_unique = [
     get_unique(i) for i in [super_power_list, gender_list, teams_list, universe_list]
     ]
 
-gn_df = DataFrame(props_dict(gn_unique))
-un_df = DataFrame(props_dict(un_unique))
-sp_df = DataFrame(props_dict(sp_unique))
-tm_df = DataFrame(props_dict(tm_unique))
+gn_df = pd.DataFrame(props_dict(gn_unique))
+un_df = pd.DataFrame(props_dict(un_unique))
+sp_df = pd.DataFrame(props_dict(sp_unique))
+tm_df = pd.DataFrame(props_dict(tm_unique))
 
 gn_df.to_csv("genders.csv", encoding="utf-8", index=False)
 un_df.to_csv("universes.csv", encoding="utf-8", index=False)
