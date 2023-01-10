@@ -93,10 +93,36 @@ char_sp = []
 
 for x_key, x_val in x_entities.items():
     c_s = pd.DataFrame({"char_id": x_key, "superpoder_id": get_id(x_val, super_power)})
-    char_sp.append(c_s)          
-                     
+    char_sp.append(c_s)
+
 char_sp_df = pd.concat(char_sp)
 char_sp_df.to_csv("char_sp.csv", encoding="utf-8", index=False)
+
+
+# Character Teams
+char_team = []
+
+for x_key, x_val in x_entities.items():
+    c_t = pd.DataFrame({"char_id": x_key, "team_id": get_id(x_val, teams)})
+    char_team.append(c_t)
+
+char_team_df = pd.concat(char_team)
+char_team_df.to_csv("char_team.csv", encoding="utf-8", index=False)
+
+
+# Character Teams
+char_universe = []
+
+for x_key, x_val in x_entities.items():
+    c_u = pd.DataFrame({"char_id": x_key, "universe_id": get_id(x_val, teams)})
+    char_universe.append(c_u)
+
+char_universe_df = pd.concat(char_universe)
+char_universe_df.to_csv("char_universe.csv", encoding="utf-8", index=False)
+
+
+
+
 
 
 super_power_list = []
