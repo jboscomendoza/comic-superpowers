@@ -120,7 +120,7 @@ char_team_df = pd.concat(char_team)
 # Character universe
 char_universe = []
 for x_key, x_val in x_entities.items():
-    c_u = pd.DataFrame({"char_id": x_key, "uni_id": get_id(x_val, teams)})
+    c_u = pd.DataFrame({"char_id": x_key, "uni_id": get_id(x_val, universe)})
     char_universe.append(c_u)
 char_universe_df = pd.concat(char_universe)
 
@@ -150,6 +150,7 @@ char_data = pd.merge(char_data, char_team_df, on="char_id", how="left")
 char_data = pd.merge(char_data, char_universe_df, on="char_id", how="left")
 char_data = pd.merge(char_data, gn_df, on="gen_id", how="left")
 char_data = pd.merge(char_data, sp_df, on="sp_id", how="left")
+char_data["uni_id"].unique()
 char_data = pd.merge(char_data, un_df, on="uni_id", how="left")
 char_data = pd.merge(char_data, tm_df, on="team_id", how="left")
 char_data = char_data.replace({"None":np.nan})

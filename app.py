@@ -145,7 +145,7 @@ tab_char.markdown(char_desc+".")
 
 contenido = {
     u"Género": pers["gen_nombre"].drop_duplicates(),
-    "poderes": pers["sp_nombre"].drop_duplicates(),
+    "Poderes": pers["sp_nombre"].drop_duplicates(),
     "Equipos": pers["team_nombre"].drop_duplicates(),
     "Universos": pers["uni_nombre"].drop_duplicates()
 }
