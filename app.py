@@ -1,8 +1,14 @@
 import streamlit as st
 import pandas as pd
 
-char = pd.read_parquet("char_data.parquet")
+cols_str = ["char_desc", "sp_nombre", "sp_desc", "team_desc"]
 
+char = pd.read_parquet("char_data.parquet")
+char[cols_str] = char[cols_str].apply(lambda x: x.str.capitalize())
+
+### ###
+### App
+### ###
 st.markdown("# X-Men")
 
 conteo_sp = (
@@ -32,14 +38,29 @@ st.markdown("## Equipos más frecuentes")
 st.bar_chart(conteo_team, x="Equipo", y="Conteo")
 
 
-sel_char = st.selectbox(
+# Grupos
+tab_sp, tab_team, tab_char = st.tabs(["Poderes", "Equipos", "Personajes"])
+
+sel_sp = tab_sp.selectbox("Elige un superpoder", char["sp_nombre"].sort_values().unique())
+char_sp = char["char_nombre"].loc[char["sp_nombre"] == sel_sp].drop_duplicates()
+tab_sp.metric("Personajes", len(char_sp))
+tab_sp.table(char_sp)
+
+sel_team = tab_team.selectbox("Elige un equipo", char["team_nombre"].sort_values().unique())
+char_team = char["char_nombre"].loc[char["team_nombre"] == sel_team].drop_duplicates()
+tab_team.metric("Personajes", len(char_team))
+tab_team.table(char_team)
+
+
+# Personaje
+sel_char = tab_char.selectbox(
     "Elige un personaje",
     char["char_nombre"].unique()
 )
 
 pers = char.loc[char["char_nombre"] == sel_char]
 
-p_1, p_2, p_3 = st.columns(3)
+p_1, p_2, p_3 = tab_char.columns(3)
 
 p_1.markdown("### Súperpoderes")
 for sp in pers["sp_nombre"].drop_duplicates():
