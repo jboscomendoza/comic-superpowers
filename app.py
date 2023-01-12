@@ -22,11 +22,6 @@ conteo_sp = (
 )
 conteo_sp.columns = ["Superpoder", "Conteo"]
 
-st.markdown("## Superpoderes más frecuentes")
-st.metric("Superpoderes distintos", len(conteo_sp))
-st.bar_chart(conteo_sp, x="Superpoder", y="Conteo")
-
-
 conteo_team = (
     char[["char_nombre", "team_nombre"]]
     .drop_duplicates()
@@ -36,18 +31,52 @@ conteo_team = (
     .reset_index(drop=True)
 )
 conteo_team.columns = ["Equipo", "Conteo"]
-st.markdown("## Equipos más frecuentes")
-st.metric("Equipos distintos", len(conteo_team))
-st.bar_chart(conteo_team, x="Equipo", y="Conteo")
+
+char_unique = char["char_nombre"].unique()
+
+conteos = [char_unique, conteo_sp, conteo_team]
+
+for cont, cont_col in zip(conteos, st.columns(len(conteos))):
+    cont_col.metric("Personajes distintos", len(cont))
 
 
-# Grupos
+# Tabs
 tab_sp, tab_team, tab_char = st.tabs(["Poderes", "Equipos", "Personajes"])
+
+
+sp_bar = go.Figure()
+sp_bar.add_trace(go.Bar(   
+    x=conteo_sp["Superpoder"].str.slice(0, 20),
+    y=conteo_sp["Conteo"]
+))
+sp_bar.update_layout(dict(
+     height=300, 
+     margin=dict(t=25, r=0, b=0, l=0),
+     ))
+
+tab_sp.markdown("## Superpoderes más frecuentes")
+tab_sp.plotly_chart(sp_bar)
 
 sel_sp = tab_sp.selectbox("Elige un superpoder", char["sp_nombre"].sort_values().unique())
 char_sp = char["char_nombre"].loc[char["sp_nombre"] == sel_sp].drop_duplicates()
 tab_sp.metric("Personajes", len(char_sp))
 tab_sp.table(char_sp)
+
+# Equipos
+team_bar = go.Figure()
+team_bar.add_trace(go.Bar(   
+    x=conteo_team["Equipo"].str.slice(0, 20),
+    y=conteo_team["Conteo"]
+))
+team_bar.update_layout(dict(
+     height=300, 
+     margin=dict(t=25, r=0, b=0, l=0),
+     ))
+
+
+tab_team.markdown("## Equipos más frecuentes")
+tab_team.plotly_chart(team_bar)
+
 
 sel_team = tab_team.selectbox("Elige un equipo", char["team_nombre"].sort_values().unique())
 char_team = char["char_nombre"].loc[char["team_nombre"] == sel_team].drop_duplicates()
@@ -67,7 +96,7 @@ gen_bar.update_layout(dict(
      margin=dict(t=25, r=0, b=0, l=0),
      ))
 
-tab_char.metric("Personajes distintos", len(char["char_nombre"].unique()))
+
 tab_char.plotly_chart(gen_bar)
 
 sel_char = tab_char.selectbox(
