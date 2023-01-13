@@ -4,7 +4,22 @@ from plotly import graph_objects as go
 
 cols_str = ["char_desc", "sp_nombre", "sp_desc", "team_desc", "gen_nombre"]
 
+ESWIKI_URL = "https://es.wikipedia.org/wiki/"
+
+
+def crear_enlace(wiki_link):
+    if wiki_link == "" or wiki_link is None:
+        wiki_link_txt = u"No tiene articulo en Wikipedia."
+    else:
+        wiki_link = wiki_link.replace(" ", "_")
+        wiki_link = ESWIKI_URL+wiki_link
+        wiki_link_txt = u"[Artículo en Wikipedia]({})".format(wiki_link)
+    return wiki_link_txt
+
+
 char = pd.read_parquet("char_data.parquet")
+char = char.rename(columns={"char_eswiki": "char_wiki"})
+
 char[cols_str] = char[cols_str].apply(lambda x: x.str.capitalize())
 
 
@@ -73,6 +88,9 @@ sel_sp = tab_sp.selectbox("Elige un poder", char["sp_nombre"].sort_values().uniq
 sp_desc = char["sp_desc"].loc[char["sp_nombre"] == sel_sp].unique().item()
 tab_sp.markdown(sp_desc+".")
 
+sp_wiki = char["sp_wiki"].loc[char["sp_nombre"] == sel_sp].unique().item()
+tab_sp.markdown(crear_enlace(sp_wiki))
+
 char_sp = char["char_nombre"].loc[char["sp_nombre"] == sel_sp].drop_duplicates()
 tab_sp.metric("Personajes con este poder", len(char_sp))
 char_sp_nombres = (
@@ -107,6 +125,9 @@ team_desc = char["team_desc"].loc[char["team_nombre"] == sel_team].unique().item
 tab_team.markdown(team_desc+".")
 
 char_team = char["char_nombre"].loc[char["team_nombre"] == sel_team].drop_duplicates()
+team_wiki = char["team_wiki"].loc[char["team_nombre"] == sel_team].unique().item()
+
+tab_team.markdown(crear_enlace(team_wiki))
 tab_team.metric("Personajes que han sido integrantes de este equipo", len(char_team))
 char_team_nombres = (
     char_team
@@ -141,7 +162,19 @@ sel_char = tab_char.selectbox(
 pers = char.loc[char["char_nombre"] == sel_char]
 
 char_desc = pers["char_desc"].unique().item()
+
+char_wiki = pers["char_wiki"].unique().item()
+if char_wiki == "" :
+    char_wiki_txt = u"No tiene articulo en Wikipedia."
+else:
+    char_wiki = char_wiki.replace(" ", "_")
+    char_wiki = ESWIKI_URL+char_wiki
+    char_wiki_txt = u"[Artículo en Wikipedia]({})".format(char_wiki)
+
 tab_char.markdown(char_desc+".")
+tab_char.markdown(char_wiki_txt)
+
+
 
 contenido = {
     u"Género": pers["gen_nombre"].drop_duplicates(),
