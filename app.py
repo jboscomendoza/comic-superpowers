@@ -23,6 +23,28 @@ def crear_enlace(wiki_link):
     return wiki_link_txt
 
 
+def crear_descripcion(tipo, s_tab, seleccion):
+    mensaje = {
+        "team": "Personajes que han sido integrantes de este equipo.",
+        "sp":   "Personajes con este poder.",
+        "uni":  "Personajes que habitan este universo."
+    } 
+    s_desc = char[tipo+"_desc"].loc[char[tipo+"_nombre"] == seleccion].unique().item()
+    s_tab.markdown(s_desc+".")
+    s_wiki = char[tipo+"_wiki"].loc[char[tipo+"_nombre"] == seleccion].unique().item()
+    s_char = char["char_nombre"].loc[char[tipo+"_nombre"] == seleccion].drop_duplicates()
+    s_tab.markdown(crear_enlace(s_wiki))
+    s_tab.metric(mensaje[tipo], s_char.count())
+    s_char_nombres = (
+        s_char
+        .to_frame()
+        .sort_values("char_nombre")
+        .reset_index(drop=True)
+        .rename(columns={"char_nombre":"Personaje"})
+    )
+    s_tab.table(s_char_nombres)
+
+
 # Data
 char = pd.read_parquet("char_data.parquet")
 char = char.rename(columns={"char_eswiki": "char_wiki"})
@@ -151,23 +173,7 @@ tab_sp.plotly_chart(sp_bar)
 
 sp_sel = tab_sp.selectbox("Elige un poder", char["sp_nombre"].sort_values().unique())
 
-sp_desc = char["sp_desc"].loc[char["sp_nombre"] == sp_sel].unique().item()
-tab_sp.markdown(sp_desc+".")
-
-sp_wiki = char["sp_wiki"].loc[char["sp_nombre"] == sp_sel].unique().item()
-tab_sp.markdown(crear_enlace(sp_wiki))
-
-char_sp = char["char_nombre"].loc[char["sp_nombre"] == sp_sel].drop_duplicates()
-tab_sp.metric("Personajes con este poder", char_sp.count())
-char_sp_nombres = (
-    char_sp
-    .to_frame()
-    .sort_values("char_nombre")
-    .reset_index(drop=True)
-    .rename(columns={"char_nombre":"Personaje"})
-    )
-tab_sp.table(char_sp_nombres)
-
+crear_descripcion("sp", tab_sp, sp_sel)
 
 ## Equipos
 tab_team.markdown("## Equipos más frecuentes")
@@ -176,19 +182,4 @@ tab_team.plotly_chart(team_bar)
 
 team_sel = tab_team.selectbox("Elige un equipo", char["team_nombre"].sort_values().unique())
 
-team_desc = char["team_desc"].loc[char["team_nombre"] == team_sel].unique().item()
-tab_team.markdown(team_desc+".")
-
-char_team = char["char_nombre"].loc[char["team_nombre"] == team_sel].drop_duplicates()
-team_wiki = char["team_wiki"].loc[char["team_nombre"] == team_sel].unique().item()
-
-tab_team.markdown(crear_enlace(team_wiki))
-tab_team.metric("Personajes que han sido integrantes de este equipo", char_team.count())
-char_team_nombres = (
-    char_team
-    .to_frame()
-    .sort_values("char_nombre")
-    .reset_index(drop=True)
-    .rename(columns={"char_nombre":"Personaje"})
-    )
-tab_team.table(char_team_nombres)
+crear_descripcion("team", tab_team, team_sel)
