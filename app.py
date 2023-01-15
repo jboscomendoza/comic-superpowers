@@ -45,6 +45,20 @@ def crear_descripcion(tipo, s_tab, seleccion):
     s_tab.table(s_char_nombres)
 
 
+def get_faltantes(tipo, datos):
+    tipo_cols = [f"{tipo}_nombre", f"{tipo}_wiki", f"{tipo}_desc"]
+    tipo_names = ["Nombre", "Wiki", u"Descripción"]
+    if tipo == "char":
+        tipo_cols.append("sp_nombre")
+        tipo_names.append("Poderes")
+    tipo_data = datos[tipo_cols]
+    tipo_data = tipo_data.loc[tipo_data[f"{tipo}_nombre"]!="Faltante"]
+    tipo_sel = tipo_data.loc[tipo_data.isin(["Faltante"]).any(axis=1)]
+    tipo_sel = tipo_sel.drop_duplicates().reset_index(drop=True)
+    tipo_sel.columns = tipo_names
+    return tipo_sel
+
+
 # Data
 char = pd.read_parquet("char_data.parquet")
 char = char.rename(columns={"char_eswiki": "char_wiki"})
@@ -128,19 +142,20 @@ for cont_k, cont_v, cont_col in zip(conteos.keys(), conteos.values(), metric_col
 
 
 ## Tabs
-tab_char, tab_sp, tab_team = st.tabs([
+char_tab, sp_tab, team_tab, fal_tab = st.tabs([
     ":busts_in_silhouette: Personajes",
     ":mortar_board: Poderes", 
     ":globe_with_meridians: Equipos", 
+    ":construction: Faltantes"
     ])
 
 
 # Personajes
-tab_char.plotly_chart(gen_bar)
-
-char_sel = tab_char.selectbox(
+char_tab.markdown("## Elige un personaje:")
+char_sel = char_tab.selectbox(
     "Elige un personaje",
-    char["char_nombre"].unique()
+    options=char["char_nombre"].unique(),
+    label_visibility="hidden"
 )
 
 pers = char.loc[char["char_nombre"] == char_sel]
@@ -149,8 +164,9 @@ char_desc = pers["char_desc"].unique().item()
 
 char_wiki = pers["char_wiki"].unique().item()
 
-tab_char.markdown(char_desc+".")
-tab_char.markdown(crear_enlace(char_wiki))
+char_tab.markdown(u"## Descripción")
+char_tab.markdown(char_desc+".")
+char_tab.markdown(crear_enlace(char_wiki))
 
 contenido = {
     u"Género": pers["gen_nombre"].drop_duplicates(),
@@ -159,27 +175,62 @@ contenido = {
     "Universos": pers["uni_nombre"].drop_duplicates()
 }
 
-char_cols = tab_char.columns(len(contenido))
+char_cols = char_tab.columns(len(contenido))
 
 for i_col, i_key, i_value in zip(char_cols, contenido.keys(), contenido.values()):
     i_col.markdown("### "+i_key)
     for value_in_v in i_value:
         i_col.markdown(value_in_v)
 
+char_tab.markdown(u"## Personajes por género")
+char_tab.plotly_chart(gen_bar)
+
 
 ## Poder
-tab_sp.markdown("## Poderes más frecuentes")
-tab_sp.plotly_chart(sp_bar)
+sp_tab.markdown("## Elige un poder:")
+sp_sel = sp_tab.selectbox(
+    "Elige un poder", 
+    options=char["sp_nombre"].sort_values().unique(),
+    label_visibility="hidden")
 
-sp_sel = tab_sp.selectbox("Elige un poder", char["sp_nombre"].sort_values().unique())
+sp_tab.markdown("## Descripción")
+crear_descripcion("sp", sp_tab, sp_sel)
 
-crear_descripcion("sp", tab_sp, sp_sel)
+sp_tab.markdown("## Poderes más frecuentes")
+sp_tab.plotly_chart(sp_bar)
+
 
 ## Equipos
-tab_team.markdown("## Equipos más frecuentes")
+team_tab.markdown("## Elige un equipo:")
+team_sel = team_tab.selectbox(
+    "Elige un equipo", 
+    options=char["team_nombre"].sort_values().unique(),
+    label_visibility="hidden"
+    )
 
-tab_team.plotly_chart(team_bar)
+team_tab.markdown(u"## Descripción")
+crear_descripcion("team", team_tab, team_sel)
 
-team_sel = tab_team.selectbox("Elige un equipo", char["team_nombre"].sort_values().unique())
+team_tab.markdown(u"## Equipos con más integrantes")
+team_tab.plotly_chart(team_bar)
 
-crear_descripcion("team", tab_team, team_sel)
+
+## Faltantes
+fal_tab.markdown("## Entradas con datos faltantes")
+
+fal_sel = fal_tab.selectbox(
+    "Elige un tipo de entrada", 
+    ["Personajes", "Poderes", "Equipos", "Universos"]
+)
+
+fal_dict = {
+    "Personajes": "char",
+     "Poderes": "sp",
+     "Equipos": "team",
+     "Universos": "uni"
+     }
+
+fal_tab.dataframe(
+    get_faltantes(fal_dict[fal_sel], datos=char),
+    use_container_width=True
+    )
