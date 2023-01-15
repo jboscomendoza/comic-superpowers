@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+import graph_plots as gp
+import matplotlib.pyplot as plt
 from plotly import graph_objects as go
 
 st.set_page_config(
@@ -200,6 +202,11 @@ sp_tab.markdown("## Poderes más frecuentes")
 sp_tab.plotly_chart(sp_bar)
 
 
+sp_fig, sp_ax = plt.subplots()
+gp.graph_sp(sp_sel, char)
+sp_tab.markdown(u"## Relación entre poderes")
+sp_tab.pyplot(sp_fig)
+
 ## Equipos
 team_tab.markdown("## Elige un equipo:")
 team_sel = team_tab.selectbox(
@@ -214,6 +221,10 @@ crear_descripcion("team", team_tab, team_sel)
 team_tab.markdown(u"## Equipos con más integrantes")
 team_tab.plotly_chart(team_bar)
 
+team_fig, team_ax = plt.subplots()
+gp.graph_team(team_sel, char)
+team_tab.markdown(u"## Relación entre equipos")
+team_tab.pyplot(team_fig)
 
 ## Faltantes
 fal_tab.markdown("## Entradas con datos faltantes")
