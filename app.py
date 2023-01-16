@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-COLS_STR = ["char_desc", "sp_nombre", "sp_desc", "team_desc", "gen_nombre"]
+COLS_STR = ["char_desc", "sp_nombre", "sp_desc", "team_desc", "gen_nombre", "uni_desc"]
 ESWIKI_URL = "https://es.wikipedia.org/wiki/"
 
 
@@ -27,16 +27,19 @@ def crear_enlace(wiki_link):
 
 def crear_descripcion(tipo, s_tab, seleccion):
     mensaje = {
-        "team": "Personajes que han sido integrantes de este equipo.",
-        "sp":   "Personajes con este poder.",
-        "uni":  "Personajes que habitan este universo."
+        "team": "Personajes que han sido integrantes de este equipo",
+        "sp":   "Personajes con este poder",
+        "uni":  "Personajes que habitan este universo"
     } 
     s_desc = char[tipo+"_desc"].loc[char[tipo+"_nombre"] == seleccion].unique().item()
     s_tab.markdown(s_desc+".")
     s_wiki = char[tipo+"_wiki"].loc[char[tipo+"_nombre"] == seleccion].unique().item()
     s_char = char["char_nombre"].loc[char[tipo+"_nombre"] == seleccion].drop_duplicates()
     s_tab.markdown(crear_enlace(s_wiki))
-    s_tab.metric(mensaje[tipo], s_char.count())
+    
+    s_tab.markdown("## "+mensaje[tipo])
+    s_col1, s_col2 = s_tab.columns([1, 4])
+    s_col1.metric(label="Total de personajes", value=s_char.count())
     s_char_nombres = (
         s_char
         .to_frame()
@@ -44,7 +47,7 @@ def crear_descripcion(tipo, s_tab, seleccion):
         .reset_index(drop=True)
         .rename(columns={"char_nombre":"Personaje"})
     )
-    s_tab.table(s_char_nombres)
+    s_col2.dataframe(s_char_nombres, use_container_width=True)
 
 
 def get_faltantes(tipo, datos):
@@ -153,11 +156,11 @@ char_tab, sp_tab, team_tab, fal_tab = st.tabs([
 
 
 # Personajes
-char_tab.markdown("## Elige un personaje:")
+char_tab.markdown("## Elige un personaje")
 char_sel = char_tab.selectbox(
-    "Elige un personaje",
+    " personaje",
     options=char["char_nombre"].unique(),
-    label_visibility="hidden"
+    label_visibility="collapsed"
 )
 
 pers = char.loc[char["char_nombre"] == char_sel]
@@ -189,42 +192,44 @@ char_tab.plotly_chart(gen_bar)
 
 
 ## Poder
-sp_tab.markdown("## Elige un poder:")
+sp_tab.markdown("## Poderes más frecuentes")
+sp_tab.plotly_chart(sp_bar)
+
+sp_tab.markdown("## Elige un poder")
 sp_sel = sp_tab.selectbox(
     "Elige un poder", 
     options=char["sp_nombre"].sort_values().unique(),
-    label_visibility="hidden")
+    label_visibility="collapsed")
 
 sp_tab.markdown("## Descripción")
 crear_descripcion("sp", sp_tab, sp_sel)
 
-sp_tab.markdown("## Poderes más frecuentes")
-sp_tab.plotly_chart(sp_bar)
-
-
 sp_fig, sp_ax = plt.subplots()
+sp_ax.set_frame_on(False)
 gp.graph_sp(sp_sel, char)
 sp_tab.markdown(u"## Relación entre poderes")
-sp_tab.pyplot(sp_fig)
+sp_tab.pyplot(sp_fig, facecolor="#0e1117")
 
 ## Equipos
-team_tab.markdown("## Elige un equipo:")
+team_tab.markdown(u"## Equipos con más integrantes")
+team_tab.plotly_chart(team_bar)
+
+team_tab.markdown("## Elige un equipo")
 team_sel = team_tab.selectbox(
     "Elige un equipo", 
     options=char["team_nombre"].sort_values().unique(),
-    label_visibility="hidden"
+    label_visibility="collapsed"
     )
 
 team_tab.markdown(u"## Descripción")
 crear_descripcion("team", team_tab, team_sel)
 
-team_tab.markdown(u"## Equipos con más integrantes")
-team_tab.plotly_chart(team_bar)
-
 team_fig, team_ax = plt.subplots()
+team_ax.set_frame_on(False)
 gp.graph_team(team_sel, char)
 team_tab.markdown(u"## Relación entre equipos")
-team_tab.pyplot(team_fig)
+team_tab.pyplot(team_fig, facecolor="#0e1117")
+
 
 ## Faltantes
 fal_tab.markdown("## Entradas con datos faltantes")

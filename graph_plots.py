@@ -17,14 +17,14 @@ def graph_team(team_to_graph, graph_datos):
 
     graph_team = nx.Graph()
     graph_team = nx.from_pandas_edgelist(out_team)
-    plot_graph_team = nx.draw_networkx(graph_team,
+    team_graph_sp = nx.draw_networkx(graph_team,
                     with_labels=True,
-                    alpha=.85,
-                    node_size=150,
-                    node_color="#a2d2ff",
-                    edge_color="#ffb703",
-                    font_size=8)
-    return plot_graph_team
+                    node_size=200,
+                    font_color="#ffffff",
+                    node_color="#023e7d",
+                    edge_color="#c36f09",
+                    font_size=9)
+    return team_graph_sp
 
 
 def graph_sp(sp_to_graph, graph_datos):
@@ -42,9 +42,9 @@ def graph_sp(sp_to_graph, graph_datos):
     graph_sp = nx.Graph()
     graph_sp = nx.from_pandas_edgelist(sp_edges)
     plot_graph_sp = nx.draw_networkx(graph_sp, 
-                    node_size = sp_edges["n"]*150,
-                    alpha=.85,
-                    node_color="#a2d2ff",
-                    edge_color="#ffb703",
-                    font_size=10)
+                    node_size = sp_edges["n"]*200,
+                    font_color="#ffffff",
+                    node_color="#023e7d",
+                    edge_color="#c36f09",
+                    font_size=9)
     return plot_graph_sp
