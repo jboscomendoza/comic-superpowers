@@ -37,10 +37,12 @@ def crear_enlace(wiki_link, wiki_tipo):
 
 def crear_descripcion(tipo, s_tab, seleccion):
     mensaje = {
+        "char": "Personaje",
         "team": "Personajes que han sido integrantes de este equipo",
         "sp":   "Personajes con este poder",
         "uni":  "Personajes que habitan este universo"
     } 
+    s_tab.markdown(u"## Descripción")
     s_desc = char[tipo+"_desc"].loc[char[tipo+"_nombre"] == seleccion].unique().item()
     s_tab.markdown(s_desc+".")
     s_wiki = char[tipo+"_wiki"].loc[char[tipo+"_nombre"] == seleccion].unique().item()
@@ -51,17 +53,18 @@ def crear_descripcion(tipo, s_tab, seleccion):
     enlace_wikidata = crear_enlace(s_id, "wikidata")
     s_tab.markdown(f"### Enlaces \n* {enlace_eswiki}  \n* {enlace_wikidata}")
     
-    s_tab.markdown("## "+mensaje[tipo])
-    s_col1, s_col2 = s_tab.columns([1, 4])
-    s_col1.metric(label="Total de personajes", value=s_char.count())
-    s_char_nombres = (
-        s_char
-        .to_frame()
-        .sort_values("char_nombre")
-        .reset_index(drop=True)
-        .rename(columns={"char_nombre":"Personaje"})
-    )
-    s_col2.dataframe(s_char_nombres, use_container_width=True)
+    if tipo != "char":
+        s_tab.markdown("## "+mensaje[tipo])
+        s_col1, s_col2 = s_tab.columns([1, 4])
+        s_col1.metric(label="Total de personajes", value=s_char.count())
+        s_char_nombres = (
+            s_char
+            .to_frame()
+            .sort_values("char_nombre")
+            .reset_index(drop=True)
+            .rename(columns={"char_nombre":"Personaje"})
+        )
+        s_col2.dataframe(s_char_nombres, use_container_width=True)
 
 
 def get_faltantes(tipo, datos):
@@ -122,6 +125,7 @@ conteo_gen = (
     .count()
 )
 
+
 # Plots
 layout_dict = dict(
     height=300, 
@@ -149,22 +153,19 @@ gen_bar.add_trace(go.Bar(
 ))
 gen_bar.update_layout(layout_dict)
 
+
 ### ###
 ### App
 ### ###
-st.markdown("# X-Men")
-
-metric_cols = st.columns(len(conteos))
-
-for cont_k, cont_v, cont_col in zip(conteos.keys(), conteos.values(), metric_cols):
-    cont_col.metric(cont_k, cont_v)
+st.markdown("# X-Men - Datos abiertos")
 
 
 ## Tabs
-char_tab, sp_tab, team_tab, fal_tab = st.tabs([
+char_tab, sp_tab, team_tab, bar_tab, fal_tab = st.tabs([
     ":busts_in_silhouette: Personajes",
     ":mortar_board: Poderes", 
-    ":globe_with_meridians: Equipos", 
+    ":globe_with_meridians: Equipos",
+    ":bar_chart: Resumen",
     ":construction: Faltantes"
     ])
 
@@ -182,10 +183,9 @@ pers = char.loc[char["char_nombre"] == char_sel]
 char_desc = pers["char_desc"].unique().item()
 
 char_wiki = pers["char_wiki"].unique().item()
+char_wiki = pers["char_id"].unique().item()
 
-char_tab.markdown(u"## Descripción")
-char_tab.markdown(char_desc+".")
-char_tab.markdown(crear_enlace(char_wiki, "eswiki"))
+crear_descripcion("char", char_tab, char_sel)
 
 contenido = {
     u"Género": pers["gen_nombre"].drop_duplicates(),
@@ -201,21 +201,14 @@ for i_col, i_key, i_value in zip(char_cols, contenido.keys(), contenido.values()
     for value_in_v in i_value:
         i_col.markdown(value_in_v)
 
-char_tab.markdown(u"## Personajes por género")
-char_tab.plotly_chart(gen_bar)
-
 
 ## Poder
-sp_tab.markdown("## Poderes más frecuentes")
-sp_tab.plotly_chart(sp_bar)
-
 sp_tab.markdown("## Elige un poder")
 sp_sel = sp_tab.selectbox(
     "Elige un poder", 
     options=char["sp_nombre"].sort_values().unique(),
     label_visibility="collapsed")
 
-sp_tab.markdown("## Descripción")
 crear_descripcion("sp", sp_tab, sp_sel)
 
 sp_fig, sp_ax = plt.subplots()
@@ -224,10 +217,8 @@ gp.graph_sp(sp_sel, char)
 sp_tab.markdown(u"## Relación entre poderes")
 sp_tab.pyplot(sp_fig, facecolor="#0e1117")
 
-## Equipos
-team_tab.markdown(u"## Equipos con más integrantes")
-team_tab.plotly_chart(team_bar)
 
+## Equipos
 team_tab.markdown("## Elige un equipo")
 team_sel = team_tab.selectbox(
     "Elige un equipo", 
@@ -235,7 +226,6 @@ team_sel = team_tab.selectbox(
     label_visibility="collapsed"
     )
 
-team_tab.markdown(u"## Descripción")
 crear_descripcion("team", team_tab, team_sel)
 
 team_fig, team_ax = plt.subplots()
@@ -243,6 +233,21 @@ team_ax.set_frame_on(False)
 gp.graph_team(team_sel, char)
 team_tab.markdown(u"## Relación entre equipos")
 team_tab.pyplot(team_fig, facecolor="#0e1117")
+
+
+## Resumen
+metric_cols = bar_tab.columns(len(conteos))
+for cont_k, cont_v, cont_col in zip(conteos.keys(), conteos.values(), metric_cols):
+    cont_col.metric(cont_k, cont_v)
+
+bar_tab.markdown(u"## Personajes por género")
+bar_tab.plotly_chart(gen_bar)
+
+bar_tab.markdown("## Poderes más frecuentes")
+bar_tab.plotly_chart(sp_bar)
+
+bar_tab.markdown(u"## Equipos con más integrantes")
+bar_tab.plotly_chart(team_bar)
 
 
 ## Faltantes
