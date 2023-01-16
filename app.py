@@ -12,17 +12,27 @@ st.set_page_config(
 )
 
 COLS_STR = ["char_desc", "sp_nombre", "sp_desc", "team_desc", "gen_nombre", "uni_desc"]
-ESWIKI_URL = "https://es.wikipedia.org/wiki/"
 
 
-def crear_enlace(wiki_link):
-    if wiki_link == "Faltante" or wiki_link is None:
-        wiki_link_txt = u"No tiene articulo en Wikipedia."
-    else:
-        wiki_link = wiki_link.replace(" ", "_")
-        wiki_link = ESWIKI_URL+wiki_link
-        wiki_link_txt = u"[Artículo en Wikipedia]({})".format(wiki_link)
-    return wiki_link_txt
+def crear_enlace(wiki_link, wiki_tipo):
+    """Tipo: Uno de eswiki o wikidata"""
+    wiki_link = str(wiki_link)
+    wiki_link = wiki_link.replace(" ", "_")
+    sitio_dict = {
+        "eswiki": {
+            "sitio":u"Wikipedia en español",
+            "url": "https://es.wikipedia.org/wiki/"
+            },
+        "wikidata": {
+            "sitio":"Wikidata",
+            "url":"https://www.wikidata.org/wiki/"
+            }
+        }
+    sitio = sitio_dict[wiki_tipo]["sitio"]
+    sitio_url = sitio_dict[wiki_tipo]["url"]+wiki_link
+    if wiki_link in ["Faltante", "None"]:
+        return u"No tiene articulo en "+sitio
+    return f"[{sitio}]({sitio_url})"
 
 
 def crear_descripcion(tipo, s_tab, seleccion):
@@ -34,8 +44,12 @@ def crear_descripcion(tipo, s_tab, seleccion):
     s_desc = char[tipo+"_desc"].loc[char[tipo+"_nombre"] == seleccion].unique().item()
     s_tab.markdown(s_desc+".")
     s_wiki = char[tipo+"_wiki"].loc[char[tipo+"_nombre"] == seleccion].unique().item()
+    s_id = char[tipo+"_id"].loc[char[tipo+"_nombre"] == seleccion].unique().item()
     s_char = char["char_nombre"].loc[char[tipo+"_nombre"] == seleccion].drop_duplicates()
-    s_tab.markdown(crear_enlace(s_wiki))
+    
+    enlace_eswiki   = crear_enlace(s_wiki, "eswiki")
+    enlace_wikidata = crear_enlace(s_id, "wikidata")
+    s_tab.markdown(f"### Enlaces \n* {enlace_eswiki}  \n* {enlace_wikidata}")
     
     s_tab.markdown("## "+mensaje[tipo])
     s_col1, s_col2 = s_tab.columns([1, 4])
@@ -171,7 +185,7 @@ char_wiki = pers["char_wiki"].unique().item()
 
 char_tab.markdown(u"## Descripción")
 char_tab.markdown(char_desc+".")
-char_tab.markdown(crear_enlace(char_wiki))
+char_tab.markdown(crear_enlace(char_wiki, "eswiki"))
 
 contenido = {
     u"Género": pers["gen_nombre"].drop_duplicates(),
