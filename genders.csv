@@ -1,4 +1,4 @@
-id,nombre,descripcion,idioma,wiki_link
+gen_id,gen_nombre,gen_desc,gen_idioma,gen_wiki
+Q6581097,masculino,sexo o género humano,es,Masculino
 Q6581072,femenino,sexo o género humano,es,Femenino
 Q505371,agénero,ausencia de una identidad de género,es,Agénero
-Q6581097,masculino,sexo o género humano,es,Masculino

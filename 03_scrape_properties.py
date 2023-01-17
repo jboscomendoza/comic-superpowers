@@ -61,6 +61,7 @@ super_power = "P2563"
 gender = "P21"
 teams = "P463"
 universe = "P1080"
+creators = "P170"
 
 
 with open("wiki_links.txt", "r") as links_file:
@@ -85,12 +86,15 @@ for i in x_men_ents:
 
 x_entities = x_entities_all.copy()
 
+# Filtra entidades que no tienen entrada en wikidata, identificado
+# por un diccionaro con menos keys
 to_remove = filter(lambda x: len(x) < 4, list(x_entities_all.keys()))
 for i in list(to_remove):
     x_entities.pop(i)
 
 
 # Character info
+# dataframe: char_id; char_nombre; char_desc; gen_id; char_wiki
 char_info = []
 for x_key, x_val in x_entities.items():
     c_info = {
@@ -98,7 +102,7 @@ for x_key, x_val in x_entities.items():
         "char_nombre": x_val.get("labels", {}).get("es", {}).get("value", ""),
         "char_desc": x_val.get("descriptions", {}).get("es", {}).get("value", ""),
         "gen_id": get_id(x_val, gender)[0],
-        "char_eswiki": x_val.get("sitelinks", {}).get("eswiki", {}).get("title", "")
+        "char_wiki": x_val.get("sitelinks", {}).get("eswiki", {}).get("title", "")
     }
     char_info.append(c_info)
 char_info_df = pd.DataFrame(char_info)
@@ -124,35 +128,48 @@ for x_key, x_val in x_entities.items():
     char_universe.append(c_u)
 char_universe_df = pd.concat(char_universe)
 
+# Chracter creator
+char_creator = []
+for x_key, x_val in x_entities.items():
+    c_c = pd.DataFrame({"char_id": x_key, "crea_id": get_id(x_val, creators)})
+    char_creator.append(c_c)
+char_creator_df = pd.concat(char_creator)
+
 # Properties
 super_power_list = []
 gender_list = []
 teams_list = []
 universe_list = []
+creator_list = []
 
 for i in x_entities.values():
     super_power_list.append(get_id(i, super_power))
     gender_list.append(get_id(i, gender))
     teams_list.append(get_id(i, teams))
     universe_list.append(get_id(i, universe))
+    creator_list.append(get_id(i, creators))
 
-sp_unique, gn_unique, tm_unique, un_unique = [
-    get_unique(i) for i in [super_power_list, gender_list, teams_list, universe_list]
+sp_unique, gn_unique, tm_unique, un_unique, cr_unique = [
+    get_unique(i) for i in [super_power_list, gender_list, 
+                            teams_list, universe_list, creator_list]
     ]
 
 gn_df = pd.DataFrame(props_dict(gn_unique, "gen"))
 sp_df = pd.DataFrame(props_dict(sp_unique, "sp"))
 un_df = pd.DataFrame(props_dict(un_unique, "uni"))
 tm_df = pd.DataFrame(props_dict(tm_unique, "team"))
+cr_df = pd.DataFrame(props_dict(cr_unique, "crea"))
 
 char_data = pd.merge(char_info_df, char_sp_df, on="char_id", how="left")
 char_data = pd.merge(char_data, char_team_df, on="char_id", how="left")
 char_data = pd.merge(char_data, char_universe_df, on="char_id", how="left")
+char_data = pd.merge(char_data, char_creator_df, on="char_id", how="left")
 char_data = pd.merge(char_data, gn_df, on="gen_id", how="left")
 char_data = pd.merge(char_data, sp_df, on="sp_id", how="left")
-char_data = pd.merge(char_data, un_df, on="uni_id", how="left")
 char_data = pd.merge(char_data, tm_df, on="team_id", how="left")
-char_data = char_data.replace({"None":np.nan})
+char_data = pd.merge(char_data, un_df, on="uni_id", how="left")
+char_data = pd.merge(char_data, cr_df, on="crea_id", how="left")
+char_data = char_data.replace({"None":np.nan, None:np.nan})
 
 # Requires pyarrow
 char_data.to_parquet("char_data.parquet", index=False)
@@ -161,6 +178,7 @@ gn_df.to_csv("genders.csv", encoding="utf-8", index=False)
 un_df.to_csv("universes.csv", encoding="utf-8", index=False)
 sp_df.to_csv("superpowers.csv", encoding="utf-8", index=False)
 tm_df.to_csv("teams.csv", encoding="utf-8", index=False)
+cr_df.to_csv("creators.csv", encoding="utf-8", index=False)
 # char_sp_df.to_csv("char_sp.csv", encoding="utf-8", index=False)
 # char_team_df.to_csv("char_team.csv", encoding="utf-8", index=False)
 # char_info_df.to_csv("char_info.csv", encoding="utf-8", index=False)
