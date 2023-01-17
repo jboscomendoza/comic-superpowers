@@ -13,10 +13,6 @@ st.set_page_config(
 )
 
 
-COLS_STR = ["char_desc", "sp_nombre", "sp_desc", "team_desc", 
-            "gen_nombre", "uni_desc", "crea_desc"]
-
-
 def get_conteo(ent_tipo, datos):
     ent_dict = {
         "sp":   u"Superpoder",
@@ -36,6 +32,19 @@ def get_conteo(ent_tipo, datos):
         .rename(columns={nombre: ent_dict[ent_tipo], 0:"Conteo"})
     )
     return conteo
+
+
+def get_bars(conteo):
+    bars = go.Figure()
+    bars.add_trace(go.Bar(
+        x=conteo.iloc[:, 0].str.slice(0, 20),
+        y=conteo.iloc[:, 1]
+    ))
+    bars.update_layout(
+        height=300, 
+        margin=dict(t=25, r=0, b=0, l=0)
+    )
+    return bars
 
 
 def crear_enlace(wiki_link, wiki_tipo):
@@ -108,52 +117,24 @@ def get_faltantes(tipo, datos):
 
 # Data
 char = pd.read_parquet("char_data.parquet")
-char = char.rename(columns={"char_eswiki": "char_wiki"})
-char[COLS_STR] = char[COLS_STR].apply(lambda x: x.str.capitalize())
+char = char.apply(lambda x: x.str.capitalize())
 char = char.fillna("Faltante")
 char = char.replace({"": "Faltante"})
 
 
-# Conteos
-char_unique = char["char_nombre"].unique()
+# Elementos resumen
+sp_conteo, team_conteo, crea_conteo, gen_conteo = [get_conteo(i, char) for i in [
+    "sp", "team", "crea", "gen"]]
 
-ent_tipos = ["sp", "team", "crea", "gen"]
-conteo_sp, conteo_team, conteo_crea, conteo_gen = [get_conteo(i, char) for i in ent_tipos]
-
-conteos = {
-    "Personajes": len(char_unique), 
-    "Poderes": len(conteo_sp),
-    "Equipos": len (conteo_team),
-    "Creadores": len (conteo_crea)
+totales = {
+    "Personajes": len(char["char_nombre"].unique()),
+    "Poderes": len(sp_conteo),
+    "Equipos": len (team_conteo),
+    "Creadores": len (crea_conteo)
 }
 
-
-# Plots
-layout_dict = dict(
-    height=300, 
-    margin=dict(t=25, r=0, b=0, l=0)
-    )
-
-sp_bar = go.Figure()
-sp_bar.add_trace(go.Bar(   
-    x=conteo_sp["Superpoder"].str.slice(0, 20),
-    y=conteo_sp["Conteo"]
-))
-sp_bar.update_layout(layout_dict)
-
-team_bar = go.Figure()
-team_bar.add_trace(go.Bar(   
-    x=conteo_team["Equipo"].str.slice(0, 20),
-    y=conteo_team["Conteo"]
-))
-team_bar.update_layout(layout_dict)
-
-gen_bar = go.Figure()
-gen_bar.add_trace(go.Bar(   
-    x=conteo_gen["Género"],
-    y=conteo_gen["Conteo"]
-))
-gen_bar.update_layout(layout_dict)
+sp_bar, team_bar, crea_bar, gen_bar = [get_bars(i) for i in [
+    sp_conteo, team_conteo, crea_conteo, gen_conteo]]
 
 
 ### ###
@@ -173,7 +154,7 @@ char_tab, sp_tab, team_tab, crea_tab, bar_tab, fal_tab = st.tabs([
     ])
 
 
-# Personajes
+## Personajes
 char_tab.markdown("## Elige un personaje")
 char_sel = char_tab.selectbox(
     " personaje",
@@ -251,9 +232,10 @@ crea_tab.markdown(u"## Colaboración entre creadores")
 crea_fig = gp.graph_pairs(crea_sel, "crea", char)
 crea_tab.pyplot(crea_fig, facecolor="#0e1117")
 
+
 ## Resumen
-metric_cols = bar_tab.columns(len(conteos))
-for cont_k, cont_v, cont_col in zip(conteos.keys(), conteos.values(), metric_cols):
+metric_cols = bar_tab.columns(len(totales))
+for cont_k, cont_v, cont_col in zip(totales.keys(), totales.values(), metric_cols):
     cont_col.metric(cont_k, cont_v)
 
 bar_tab.markdown(u"## Personajes por género")
@@ -264,6 +246,9 @@ bar_tab.plotly_chart(sp_bar)
 
 bar_tab.markdown(u"## Equipos con más integrantes")
 bar_tab.plotly_chart(team_bar)
+
+bar_tab.markdown(u"## Personajes por creador")
+bar_tab.plotly_chart(crea_bar)
 
 
 ## Faltantes
