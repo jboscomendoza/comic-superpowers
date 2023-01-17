@@ -34,18 +34,42 @@ def get_conteo(ent_tipo, datos):
     return conteo
 
 
-def get_bars(conteo):
+def get_bars(conteo, rango):
+    tick_labs = []
+    conteo_r = conteo.loc[conteo["Conteo"].between(rango[0], rango[1])]
+    
+    x_values = conteo_r.iloc[:, 0]
+    y_values = conteo_r.iloc[:, 1]
+    for i in x_values:
+        if len(i) > 18:
+            lab = i[0:18] + u"…"
+            tick_labs.append(lab)
+        else:
+            tick_labs.append(i)
     bars = go.Figure()
     bars.add_trace(go.Bar(
-        x=conteo.iloc[:, 0].str.slice(0, 20),
-        y=conteo.iloc[:, 1]
+        name=conteo.columns[0],
+        x=x_values,
+        y=y_values,
+        text=x_values,
+        textposition="none",
+        hovertemplate="%{text}: %{y}"
     ))
     bars.update_layout(
         height=300, 
-        margin=dict(t=25, r=0, b=0, l=0)
+        margin=dict(t=25, r=0, b=0, l=0),
+        xaxis = dict(
+            tickmode="array",
+            tickvals=x_values,
+            ticktext=tick_labs
+            )
     )
     return bars
-
+#for i in sp_conteo.iloc[:, 0]:
+#    if len(i) > 20:
+#        i[0:20] + "..."
+#    else:
+#        i
 
 def crear_enlace(wiki_link, wiki_tipo):
     """Tipo: Uno de eswiki o wikidata"""
@@ -117,9 +141,11 @@ def get_faltantes(tipo, datos):
 
 # Data
 char = pd.read_parquet("char_data.parquet")
-char = char.apply(lambda x: x.str.capitalize())
 char = char.fillna("Faltante")
 char = char.replace({"": "Faltante"})
+str_cols = ["sp_nombre", "gen_nombre", 
+            "sp_desc", "char_desc", "team_desc", "gen_desc", "crea_desc"]
+char[str_cols] = char[str_cols].apply(lambda x: x.str.capitalize())
 
 
 # Elementos resumen
@@ -132,9 +158,6 @@ totales = {
     "Equipos": len (team_conteo),
     "Creadores": len (crea_conteo)
 }
-
-sp_bar, team_bar, crea_bar, gen_bar = [get_bars(i) for i in [
-    sp_conteo, team_conteo, crea_conteo, gen_conteo]]
 
 
 ### ###
@@ -234,9 +257,21 @@ crea_tab.pyplot(crea_fig, facecolor="#0e1117")
 
 
 ## Resumen
+bar_tab.markdown(u"## Totales")
 metric_cols = bar_tab.columns(len(totales))
 for cont_k, cont_v, cont_col in zip(totales.keys(), totales.values(), metric_cols):
     cont_col.metric(cont_k, cont_v)
+
+bar_tab.markdown(u"### Rango de frecuencia")
+rango_frecuencia = bar_tab.slider(
+    "Rango de frecuencia",
+    label_visibility="collapsed",
+    min_value=1, 
+    max_value=100, 
+    value=(1, 100)
+    )
+sp_bar, team_bar, crea_bar, gen_bar = [get_bars(i, rango_frecuencia) for i in [
+    sp_conteo, team_conteo, crea_conteo, gen_conteo]]
 
 bar_tab.markdown(u"## Personajes por género")
 bar_tab.plotly_chart(gen_bar)
