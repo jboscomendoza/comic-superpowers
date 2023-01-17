@@ -27,24 +27,31 @@ def graph_team(team_to_graph, graph_datos):
     return team_graph_sp
 
 
-def graph_sp(sp_to_graph, graph_datos):
-    sp_cols = graph_datos[["char_nombre", "sp_nombre"]].drop_duplicates()
-    in_sp = sp_cols.loc[sp_cols["sp_nombre"] == sp_to_graph]
-    out_sp = sp_cols.loc[sp_cols["char_nombre"].isin(in_sp["char_nombre"])]
-    out_sp["my_sp"] = sp_to_graph
-    sp_edges = (
-        out_sp
+def graph_pairs(ent, tipo, graph_datos):
+    """
+    ent: _nombre de una entidad sp, team o crea.
+    tipo: Uno de sp, team o crea.
+    """
+    nombre = tipo+"_nombre"
+    cols = graph_datos[["char_nombre", nombre]].drop_duplicates()
+    in_df = cols.loc[cols[nombre] == ent]
+    out_df = cols.loc[cols["char_nombre"].isin(in_df["char_nombre"])].copy()
+    out_df.loc[:, "ent"] = ent
+    edges = (
+        out_df
         .drop("char_nombre", axis=1)
         .value_counts()
         .reset_index()
-        .rename(columns={"sp_nombre":"source", "my_sp":"target", 0:"n"})
+        .rename(columns={nombre:"source", "ent":"target", 0:"n"})
     )
-    graph_sp = nx.Graph()
-    graph_sp = nx.from_pandas_edgelist(sp_edges)
-    plot_graph_sp = nx.draw_networkx(graph_sp, 
-                    node_size = sp_edges["n"]*200,
+    fig, ax = plt.subplots()
+    ax.set_frame_on(False)
+    graph = nx.Graph()
+    graph = nx.from_pandas_edgelist(edges)
+    nx.draw_networkx(graph, 
+                    node_size = edges["n"]*200,
                     font_color="#ffffff",
                     node_color="#023e7d",
                     edge_color="#c36f09",
                     font_size=9)
-    return plot_graph_sp
+    return fig

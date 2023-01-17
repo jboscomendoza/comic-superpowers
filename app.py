@@ -114,6 +114,7 @@ conteo_team = (
 )
 conteo_team.columns = ["Equipo", "Conteo"]
 
+
 conteos = {
     "Personajes": len(char_unique), 
     "Poderes": len(conteo_sp),
@@ -215,10 +216,8 @@ sp_sel = sp_tab.selectbox(
 
 crear_descripcion("sp", sp_tab, sp_sel)
 
-sp_fig, sp_ax = plt.subplots()
-sp_ax.set_frame_on(False)
-gp.graph_sp(sp_sel, char)
 sp_tab.markdown(u"## Relación entre poderes")
+sp_fig = gp.graph_pairs(sp_sel, "sp", char)
 sp_tab.pyplot(sp_fig, facecolor="#0e1117")
 
 
@@ -249,6 +248,9 @@ crea_sel = crea_tab.selectbox(
 
 crear_descripcion("crea", crea_tab, crea_sel)
 
+crea_tab.markdown(u"## Colaboración entre creadores")
+crea_fig = gp.graph_pairs(crea_sel, "crea", char)
+crea_tab.pyplot(crea_fig, facecolor="#0e1117")
 
 ## Resumen
 metric_cols = bar_tab.columns(len(conteos))
