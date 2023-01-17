@@ -4,6 +4,7 @@ import graph_plots as gp
 import matplotlib.pyplot as plt
 from plotly import graph_objects as go
 
+
 st.set_page_config(
     page_title="X-Men Wikidatos",
     page_icon=":book:",
@@ -11,8 +12,30 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+
 COLS_STR = ["char_desc", "sp_nombre", "sp_desc", "team_desc", 
             "gen_nombre", "uni_desc", "crea_desc"]
+
+
+def get_conteo(ent_tipo, datos):
+    ent_dict = {
+        "sp":   u"Superpoder",
+        "team": "Equipo",
+        "gen":  u"Género",
+        "crea": "Creador",
+        "uni":  "Universo"
+    }
+    nombre = ent_tipo+"_nombre" 
+    conteo = (
+        datos[["char_nombre", nombre]]
+        .loc[datos[nombre] != "Faltante"]
+        .drop_duplicates()
+        .value_counts(subset=nombre, ascending=False)
+        .to_frame()
+        .reset_index()
+        .rename(columns={nombre: ent_dict[ent_tipo], 0:"Conteo"})
+    )
+    return conteo
 
 
 def crear_enlace(wiki_link, wiki_tipo):
@@ -42,7 +65,7 @@ def crear_descripcion(tipo, s_tab, seleccion):
         "team": "Personajes que han sido integrantes de este equipo",
         "sp":   "Personajes con este poder",
         "uni":  "Personajes que habitan este universo",
-        "crea":  "Personajes creados por esta persona",
+        "crea": "Personajes creados por esta persona",
     } 
     s_tab.markdown(u"## Descripción")
     s_desc = char[tipo+"_desc"].loc[char[tipo+"_nombre"] == seleccion].unique().item()
@@ -94,39 +117,15 @@ char = char.replace({"": "Faltante"})
 # Conteos
 char_unique = char["char_nombre"].unique()
 
-conteo_sp = (
-    char[["char_nombre", "sp_nombre"]]
-    .drop_duplicates()
-    .groupby("sp_nombre", as_index=False)
-    .count()
-    .sort_values("char_nombre", ascending=False)
-    .reset_index(drop=True)
-)
-conteo_sp.columns = ["Superpoder", "Conteo"]
-
-conteo_team = (
-    char[["char_nombre", "team_nombre"]]
-    .drop_duplicates()
-    .groupby("team_nombre", as_index=False)
-    .count()
-    .sort_values("char_nombre", ascending=False)
-    .reset_index(drop=True)
-)
-conteo_team.columns = ["Equipo", "Conteo"]
-
+ent_tipos = ["sp", "team", "crea", "gen"]
+conteo_sp, conteo_team, conteo_crea, conteo_gen = [get_conteo(i, char) for i in ent_tipos]
 
 conteos = {
     "Personajes": len(char_unique), 
     "Poderes": len(conteo_sp),
-    "Equipos": len (conteo_team)
+    "Equipos": len (conteo_team),
+    "Creadores": len (conteo_crea)
 }
-
-conteo_gen = (
-    char[["char_nombre", "gen_nombre"]]
-    .drop_duplicates()
-    .groupby("gen_nombre", as_index=False)
-    .count()
-)
 
 
 # Plots
@@ -151,8 +150,8 @@ team_bar.update_layout(layout_dict)
 
 gen_bar = go.Figure()
 gen_bar.add_trace(go.Bar(   
-    x=conteo_gen["gen_nombre"],
-    y=conteo_gen["char_nombre"]
+    x=conteo_gen["Género"],
+    y=conteo_gen["Conteo"]
 ))
 gen_bar.update_layout(layout_dict)
 
