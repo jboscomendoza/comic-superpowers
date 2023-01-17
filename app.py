@@ -5,13 +5,14 @@ import matplotlib.pyplot as plt
 from plotly import graph_objects as go
 
 st.set_page_config(
-    page_title="X-Men poderes",
+    page_title="X-Men Wikidatos",
     page_icon=":book:",
     layout="centered",
     initial_sidebar_state="expanded"
 )
 
-COLS_STR = ["char_desc", "sp_nombre", "sp_desc", "team_desc", "gen_nombre", "uni_desc"]
+COLS_STR = ["char_desc", "sp_nombre", "sp_desc", "team_desc", 
+            "gen_nombre", "uni_desc", "crea_desc"]
 
 
 def crear_enlace(wiki_link, wiki_tipo):
@@ -40,7 +41,8 @@ def crear_descripcion(tipo, s_tab, seleccion):
         "char": "Personaje",
         "team": "Personajes que han sido integrantes de este equipo",
         "sp":   "Personajes con este poder",
-        "uni":  "Personajes que habitan este universo"
+        "uni":  "Personajes que habitan este universo",
+        "crea":  "Personajes creados por esta persona",
     } 
     s_tab.markdown(u"## Descripción")
     s_desc = char[tipo+"_desc"].loc[char[tipo+"_nombre"] == seleccion].unique().item()
@@ -157,14 +159,15 @@ gen_bar.update_layout(layout_dict)
 ### ###
 ### App
 ### ###
-st.markdown("# X-Men - Datos abiertos")
+st.markdown("# X-Men - Wikidatos")
 
 
 ## Tabs
-char_tab, sp_tab, team_tab, bar_tab, fal_tab = st.tabs([
+char_tab, sp_tab, team_tab, crea_tab, bar_tab, fal_tab = st.tabs([
     ":busts_in_silhouette: Personajes",
     ":mortar_board: Poderes", 
     ":globe_with_meridians: Equipos",
+    ":brain: Creadores",
     ":bar_chart: Resumen",
     ":construction: Faltantes"
     ])
@@ -191,7 +194,8 @@ contenido = {
     u"Género": pers["gen_nombre"].drop_duplicates(),
     "Poderes": pers["sp_nombre"].drop_duplicates(),
     "Equipos": pers["team_nombre"].drop_duplicates(),
-    "Universos": pers["uni_nombre"].drop_duplicates()
+    "Universos": pers["uni_nombre"].drop_duplicates(),
+    "Creadores": pers["crea_nombre"].drop_duplicates()
 }
 
 char_cols = char_tab.columns(len(contenido))
@@ -235,6 +239,17 @@ team_tab.markdown(u"## Relación entre equipos")
 team_tab.pyplot(team_fig, facecolor="#0e1117")
 
 
+## Creadores
+crea_tab.markdown("## Elige un creador")
+crea_sel = crea_tab.selectbox(
+    "Elige un creador", 
+    options=char["crea_nombre"].sort_values().unique(),
+    label_visibility="collapsed"
+    )
+
+crear_descripcion("crea", crea_tab, crea_sel)
+
+
 ## Resumen
 metric_cols = bar_tab.columns(len(conteos))
 for cont_k, cont_v, cont_col in zip(conteos.keys(), conteos.values(), metric_cols):
@@ -255,14 +270,15 @@ fal_tab.markdown("## Entradas con datos faltantes")
 
 fal_sel = fal_tab.selectbox(
     "Elige un tipo de entrada", 
-    ["Personajes", "Poderes", "Equipos", "Universos"]
+    ["Personajes", "Poderes", "Equipos", "Universos", "Creadores"]
 )
 
 fal_dict = {
     "Personajes": "char",
      "Poderes": "sp",
      "Equipos": "team",
-     "Universos": "uni"
+     "Universos": "uni",
+     "Creadores": "crea"
      }
 
 fal_tab.dataframe(
