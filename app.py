@@ -3,6 +3,7 @@ import pandas as pd
 import graph_plots as gp
 import matplotlib.pyplot as plt
 from plotly import graph_objects as go
+import streamlit.components.v1 as components
 
 
 st.set_page_config(
@@ -234,11 +235,14 @@ team_sel = team_tab.selectbox(
 
 crear_descripcion("team", team_tab, team_sel)
 
-team_fig, team_ax = plt.subplots()
-team_ax.set_frame_on(False)
-gp.graph_team(team_sel, char)
 team_tab.markdown(u"## Relación entre equipos")
-team_tab.pyplot(team_fig, facecolor="#0e1117")
+
+bg_style = "<style>:root {background-color:#0e1117}</style>"
+gp.graph_team(team_sel, char)
+team_html = open("teams.html",'r',encoding='utf-8')
+with team_tab:
+    components.html(bg_style+team_html.read(), height=475)
+
 
 
 ## Creadores
