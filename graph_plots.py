@@ -1,7 +1,6 @@
 import pandas as pd
 from pyvis.network import Network
 import networkx as nx
-import matplotlib.pyplot as plt
 
 
 def graph_team(team_to_graph, graph_datos):
@@ -60,18 +59,39 @@ def graph_pairs(ent, tipo, graph_datos):
     edges = (
         out_df
         .drop("char_nombre", axis=1)
-        .value_counts()
+        .value_counts(normalize=True)
         .reset_index()
         .rename(columns={nombre:"source", "ent":"target", 0:"n"})
     )
-    fig, ax = plt.subplots()
-    ax.set_frame_on(False)
+    
+    n_col = edges["n"].copy()
+    edges["n"] = ((n_col - n_col.min()) / (n_col.max() - n_col.min()))
+    edges["n"] = (edges["n"] * 17.5) + 20
+    edges["n"] = edges["n"].fillna(20)
+            
     graph = nx.Graph()
     graph = nx.from_pandas_edgelist(edges)
-    nx.draw_networkx(graph, 
-                    node_size = edges["n"]*200,
-                    font_color="#ffffff",
-                    node_color="#023e7d",
-                    edge_color="#c36f09",
-                    font_size=9)
-    return fig
+    nt = Network("450px",
+                 width="100%", 
+                 font_color="white",
+                 bgcolor="#0e1117",
+                 notebook=False, 
+                 neighborhood_highlight=True)
+    nt.from_nx(graph)
+    
+    
+    for i in nt.nodes:
+        i["borderWidth"] = 1
+        i["size"] = edges["n"].loc[edges["source"] == i["id"]].item()
+        if i["id"] == ent:
+            i["group"] = 1
+            i["color"] = "#0077b6"
+        else:
+            i["group"] = 2
+            i["color"] = "#c36f09"
+
+    for i in nt.edges:
+        i["width"] = 2
+    nt.save_graph(tipo+".html")
+    return None
+

@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import graph_plots as gp
-import matplotlib.pyplot as plt
 from plotly import graph_objects as go
 import streamlit.components.v1 as components
 
@@ -66,11 +65,7 @@ def get_bars(conteo, rango):
             )
     )
     return bars
-#for i in sp_conteo.iloc[:, 0]:
-#    if len(i) > 20:
-#        i[0:20] + "..."
-#    else:
-#        i
+
 
 def crear_enlace(wiki_link, wiki_tipo):
     """Tipo: Uno de eswiki o wikidata"""
@@ -165,7 +160,7 @@ totales = {
 ### App
 ### ###
 st.markdown("# X-Men - Wikidatos")
-
+bg_style = "<style>:root {background-color:#0e1117}</style>"
 
 ## Tabs
 char_tab, sp_tab, team_tab, crea_tab, bar_tab, fal_tab = st.tabs([
@@ -221,8 +216,11 @@ sp_sel = sp_tab.selectbox(
 crear_descripcion("sp", sp_tab, sp_sel)
 
 sp_tab.markdown(u"## Relación entre poderes")
-sp_fig = gp.graph_pairs(sp_sel, "sp", char)
-sp_tab.pyplot(sp_fig, facecolor="#0e1117")
+gp.graph_pairs(sp_sel, "sp", char)
+sp_html = open("sp.html",'r',encoding='utf-8')
+with sp_tab:
+    components.html(bg_style+sp_html.read(), height=475)
+
 
 
 ## Equipos
@@ -237,13 +235,10 @@ crear_descripcion("team", team_tab, team_sel)
 
 team_tab.markdown(u"## Relación entre equipos")
 
-bg_style = "<style>:root {background-color:#0e1117}</style>"
 gp.graph_team(team_sel, char)
 team_html = open("teams.html",'r',encoding='utf-8')
 with team_tab:
     components.html(bg_style+team_html.read(), height=475)
-
-
 
 ## Creadores
 crea_tab.markdown("## Elige un creador")
@@ -256,8 +251,10 @@ crea_sel = crea_tab.selectbox(
 crear_descripcion("crea", crea_tab, crea_sel)
 
 crea_tab.markdown(u"## Colaboración entre creadores")
-crea_fig = gp.graph_pairs(crea_sel, "crea", char)
-crea_tab.pyplot(crea_fig, facecolor="#0e1117")
+gp.graph_pairs(crea_sel, "crea", char)
+crea_html = open("crea.html",'r',encoding='utf-8')
+with crea_tab:
+    components.html(bg_style+crea_html.read(), height=475)
 
 
 ## Resumen
