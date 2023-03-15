@@ -99,7 +99,7 @@ def crear_descripcion(tipo, s_tab, seleccion):
         "uni":  "Personajes que habitan este universo",
         "crea": "Personajes creados por esta persona",
     } 
-    s_tab.markdown(u"## Descripción")
+    s_tab.markdown(u"### Descripción")
     s_desc = char[tipo+"_desc"].loc[char[tipo+"_nombre"] == seleccion].unique().item()
     s_tab.markdown(s_desc+".")
     s_wiki = char[tipo+"_wiki"].loc[char[tipo+"_nombre"] == seleccion].unique().item()
@@ -108,10 +108,10 @@ def crear_descripcion(tipo, s_tab, seleccion):
     
     enlace_eswiki   = crear_enlace(s_wiki, "eswiki")
     enlace_wikidata = crear_enlace(s_id, "wikidata")
-    s_tab.markdown(f"### Enlaces \n* {enlace_eswiki}  \n* {enlace_wikidata}")
+    s_tab.markdown(f"[ {enlace_eswiki} - {enlace_wikidata} ]")
     
     if tipo != "char":
-        s_tab.markdown("## "+mensaje[tipo])
+        s_tab.markdown("### "+mensaje[tipo])
         s_col1, s_col2 = s_tab.columns([1, 4])
         s_col1.metric(label="Total de personajes", value=s_char.count())
         s_char_nombres = (
@@ -128,11 +128,13 @@ def crear_descripcion(tipo, s_tab, seleccion):
             [["char_nombre", "char_wiki", "char_id"]]
             .drop_duplicates()
         )
-        for index, row in char_to_show.iterrows():
-            char_nombre = row["char_nombre"]
-            char_wiki   = crear_enlace(row["char_wiki"], "eswiki")
-            char_data   = crear_enlace(row["char_id"], "wikidata")
-            s_col2.markdown(f"{char_nombre} [ {char_wiki} - {char_data} ]")
+        
+        with s_col2.expander("Ver personajes"):
+            for index, row in char_to_show.iterrows():
+                char_nombre = row["char_nombre"]
+                char_wiki   = crear_enlace(row["char_wiki"], "eswiki")
+                char_data   = crear_enlace(row["char_id"], "wikidata")
+                st.markdown(f"{char_nombre} [ {char_wiki} - {char_data} ]")
 
 
 def get_faltantes(tipo, datos):
@@ -188,7 +190,7 @@ char_tab, sp_tab, team_tab, crea_tab, bar_tab, fal_tab = st.tabs([
 
 
 ## Personajes
-char_tab.markdown("## Elige un personaje")
+char_tab.markdown("### Elige un personaje")
 char_sel = char_tab.selectbox(
     " personaje",
     options=char["char_nombre"].unique(),
@@ -221,7 +223,7 @@ for i_col, i_key, i_value in zip(char_cols, contenido.keys(), contenido.values()
 
 
 ## Poder
-sp_tab.markdown("## Elige un poder")
+sp_tab.markdown("### Elige un poder")
 sp_sel = sp_tab.selectbox(
     "Elige un poder", 
     options=char["sp_nombre"].sort_values().unique(),
@@ -229,7 +231,7 @@ sp_sel = sp_tab.selectbox(
 
 crear_descripcion("sp", sp_tab, sp_sel)
 
-sp_tab.markdown(u"## Relación entre poderes")
+sp_tab.markdown(u"### Relación entre poderes")
 gp.graph_pairs(sp_sel, "sp", char)
 sp_html = open("sp.html",'r',encoding='utf-8')
 with sp_tab:
@@ -247,7 +249,7 @@ team_sel = team_tab.selectbox(
 
 crear_descripcion("team", team_tab, team_sel)
 
-team_tab.markdown(u"## Relación entre equipos")
+team_tab.markdown(u"### Relación entre equipos")
 
 gp.graph_team(team_sel, char)
 team_html = open("teams.html",'r',encoding='utf-8')
@@ -255,7 +257,7 @@ with team_tab:
     components.html(bg_style+team_html.read(), height=475)
 
 ## Creadores
-crea_tab.markdown("## Elige un creador")
+crea_tab.markdown("### Elige un creador")
 crea_sel = crea_tab.selectbox(
     "Elige un creador", 
     options=char["crea_nombre"].sort_values().unique(),
@@ -264,7 +266,7 @@ crea_sel = crea_tab.selectbox(
 
 crear_descripcion("crea", crea_tab, crea_sel)
 
-crea_tab.markdown(u"## Colaboración entre creadores")
+crea_tab.markdown(u"### Colaboración entre creadores")
 gp.graph_pairs(crea_sel, "crea", char)
 crea_html = open("crea.html",'r',encoding='utf-8')
 with crea_tab:
@@ -272,7 +274,7 @@ with crea_tab:
 
 
 ## Resumen
-bar_tab.markdown(u"## Totales")
+bar_tab.markdown(u"### Totales")
 metric_cols = bar_tab.columns(len(totales))
 for cont_k, cont_v, cont_col in zip(totales.keys(), totales.values(), metric_cols):
     cont_col.metric(cont_k, cont_v)
@@ -288,21 +290,21 @@ rango_frecuencia = bar_tab.slider(
 sp_bar, team_bar, crea_bar, gen_bar = [get_bars(i, rango_frecuencia) for i in [
     sp_conteo, team_conteo, crea_conteo, gen_conteo]]
 
-bar_tab.markdown(u"## Personajes por género")
+bar_tab.markdown(u"### Personajes por género")
 bar_tab.plotly_chart(gen_bar)
 
-bar_tab.markdown("## Poderes más frecuentes")
+bar_tab.markdown("### Poderes más frecuentes")
 bar_tab.plotly_chart(sp_bar)
 
-bar_tab.markdown(u"## Equipos con más integrantes")
+bar_tab.markdown(u"### Equipos con más integrantes")
 bar_tab.plotly_chart(team_bar)
 
-bar_tab.markdown(u"## Personajes por creador")
+bar_tab.markdown(u"### Personajes por creador")
 bar_tab.plotly_chart(crea_bar)
 
 
 ## Faltantes
-fal_tab.markdown("## Entradas con datos faltantes")
+fal_tab.markdown("### Entradas con datos faltantes")
 
 fal_sel = fal_tab.selectbox(
     "Elige un tipo de entrada", 
