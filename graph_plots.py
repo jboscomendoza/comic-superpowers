@@ -18,7 +18,7 @@ def graph_team(team_to_graph, graph_datos):
 
     graph_team = nx.Graph()
     graph_team = nx.from_pandas_edgelist(out_team)
-    nt = Network("450px",
+    nt = Network("435px",
                  width="100%", 
                  font_color="white",
                  bgcolor="#0e1117",
@@ -27,10 +27,12 @@ def graph_team(team_to_graph, graph_datos):
     nt.from_nx(graph_team)
     for i in nt.nodes:
         i["borderWidth"] = 1
+        i["shape"] = "dot"
         if i["id"] == team_to_graph:
             i["group"] = 1
             i["size"] = 25
             i["color"] = "#e3d5ca"
+            i["physics"] = False
         elif i["id"] in teams:
             i["group"] = 2
             i["size"] = 20
@@ -39,6 +41,7 @@ def graph_team(team_to_graph, graph_datos):
             i["group"] = 3
             i["size"] = 15
             i["color"] = "#c36f09"
+            i["physics"] = False
 
     for i in nt.edges:
         i["width"] = 2
@@ -71,7 +74,7 @@ def graph_pairs(ent, tipo, graph_datos):
             
     graph = nx.Graph()
     graph = nx.from_pandas_edgelist(edges)
-    nt = Network("450px",
+    nt = Network("435px",
                  width="100%", 
                  font_color="white",
                  bgcolor="#0e1117",
@@ -82,16 +85,17 @@ def graph_pairs(ent, tipo, graph_datos):
     
     for i in nt.nodes:
         i["borderWidth"] = 1
+        i["shape"] = "dot"
         i["size"] = edges["n"].loc[edges["source"] == i["id"]].item()
         if i["id"] == ent:
             i["group"] = 1
             i["color"] = "#0077b6"
+            i["physics"] = False
         else:
             i["group"] = 2
             i["color"] = "#c36f09"
-
+        
     for i in nt.edges:
         i["width"] = 2
     nt.save_graph(tipo+".html")
     return None
-

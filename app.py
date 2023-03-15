@@ -176,7 +176,7 @@ totales = {
 ### App
 ### ###
 st.markdown("# X-Men - Wikidatos")
-bg_style = "<style>:root {background-color:#0e1117}</style>"
+bg_style ="" "<style>:root {background-color:#0e1117; padding:10px;}</style>"
 
 ## Tabs
 char_tab, sp_tab, team_tab, crea_tab, bar_tab, fal_tab = st.tabs([
