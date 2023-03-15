@@ -13,7 +13,8 @@ st.set_page_config(
 )
 
 
-def get_conteo(ent_tipo, datos):
+def get_conteo(ent_tipo:str, datos:pd.DataFrame) -> pd.DataFrame:
+    """ent_tipo uno de sp, team, gen, crea, uni"""
     ent_dict = {
         "sp":   u"Superpoder",
         "team": "Equipo",
@@ -81,8 +82,10 @@ def crear_enlace(wiki_link, wiki_tipo):
             "url":"https://www.wikidata.org/wiki/"
             }
         }
+    
     sitio = sitio_dict[wiki_tipo]["sitio"]
     sitio_url = sitio_dict[wiki_tipo]["url"]+wiki_link
+    
     if wiki_link in ["Faltante", "None"]:
         return u"No tiene articulo en "+sitio
     return f"[{sitio}]({sitio_url})"
@@ -118,7 +121,18 @@ def crear_descripcion(tipo, s_tab, seleccion):
             .reset_index(drop=True)
             .rename(columns={"char_nombre":"Personaje"})
         )
-        s_col2.dataframe(s_char_nombres, use_container_width=True)
+        
+        char_to_show = (
+            char
+            .loc[char["char_nombre"].isin(s_char_nombres["Personaje"])]
+            [["char_nombre", "char_wiki", "char_id"]]
+            .drop_duplicates()
+        )
+        for index, row in char_to_show.iterrows():
+            char_nombre = row["char_nombre"]
+            char_wiki   = crear_enlace(row["char_wiki"], "eswiki")
+            char_data   = crear_enlace(row["char_id"], "wikidata")
+            s_col2.markdown(f"{char_nombre} [ {char_wiki} - {char_data} ]")
 
 
 def get_faltantes(tipo, datos):
@@ -142,7 +156,7 @@ char = char.replace({"": "Faltante"})
 str_cols = ["sp_nombre", "gen_nombre", 
             "sp_desc", "char_desc", "team_desc", "gen_desc", "crea_desc"]
 char[str_cols] = char[str_cols].apply(lambda x: x.str.capitalize())
-
+#char["char_nombre"].
 
 # Elementos resumen
 sp_conteo, team_conteo, crea_conteo, gen_conteo = [get_conteo(i, char) for i in [
