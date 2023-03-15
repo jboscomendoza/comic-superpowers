@@ -34,6 +34,20 @@ CLAIMS = {
     }
 
 
+def dividir_grupos(lista:list, cantidad:int=50) -> list:
+    """Divide una lista de nombres en una lista donde cada elemento
+    es un str con cantidad elementos, divididos por |, con formato:
+    ['ele1|ele2|ele3', 'ele4|ele5|ele6', ... ]
+    """
+    divisiones = []
+    for i in range(0, len(lista), cantidad):
+        x = i
+        ls = lista[x:x+cantidad]
+        ls = "|".join(ls)
+        divisiones.append(ls)
+    return divisiones
+
+
 def get_query_json(query_term):
     query_url  = BASE_URL + PARAMS_QUERY + query_term
     query_resp = requests.get(query_url)
@@ -54,8 +68,20 @@ def get_char_json(json_data):
     return results
 
 
-def get_entity(entity_str:str, type:str):
-    """type: One of 'id' or 'title', for querying wikidata or wikipedia, respectively."""
+def get_entity(entity_str:str, type:str) -> dict:
+    u"""Consulta a wikidata o wikipedia para obtener el listado de atributos 
+    de una entidad identificada por su id o título (title).
+
+    Args:
+        entity_str (str): Nombre de la entidad. Puede ser una sola entidad o 
+        varias, divididas por |.
+        type (str): "id" para consultar wikidata; "title" para consultar 
+        wikipedia.
+
+    Returns:
+        dict: Diccionario con el listado de atributos de la o las entidades 
+        consultada, con estructura json.
+    """
     if  type == "id":
         entity_url = BASE_URL + PARAMS_ENTITY + WIKIDATA + entity_str
     elif type == "title":
@@ -64,6 +90,41 @@ def get_entity(entity_str:str, type:str):
     entity_json = entity_resp.json()
     entity_json["id"] = entity_str
     return entity_json
+
+
+"""entity: json de una entidad. what_id:identificador de atributo"""
+def get_id(entity:dict, what_id:str) -> list:
+    """Recupera identificadores únicos de entidad, contenidos en el 
+    identificador de un atributo, llamado 'claim'.
+    Por ejemplo, para el atributo "poderes", devuelve todos los 
+    identificadores de poderes que tiene la entidad.
+    
+    La ruta en wikidata para llegar a un id es:
+    mainsnak/datavalue/value/id; donde 'mainsnak' es el conjunto de
+    valores de un claim.
+
+    Args:
+        entity (dict): Entidad, formato json.
+        what_id (str): id del atributo, como aparece en wikidata.
+
+    Returns:
+        list: Lista de identificadores de Wikidata.
+    """
+    info_unique = []
+    info = entity.get("claims").get(what_id)
+    if info is not None:
+        for i in info:
+            info_id= (
+                i
+                .get("mainsnak")
+                .get("datavalue", {})
+                .get("value", {})
+                .get("id", None)
+                )
+            info_unique.append(info_id)
+        return info_unique
+    else:
+        return [None]
 
 
 def get_entity_json(char_json:dict):
