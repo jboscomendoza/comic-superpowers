@@ -48,26 +48,6 @@ def dividir_grupos(lista:list, cantidad:int=50) -> list:
     return divisiones
 
 
-def get_query_json(query_term):
-    query_url  = BASE_URL + PARAMS_QUERY + query_term
-    query_resp = requests.get(query_url)
-    query_json = query_resp.json()
-    return query_json
- 
- 
-def get_char_json(json_data):
-    """Site is one of wikidata or wikipedia"""
-    results = []
-    for i in json_data["query"]["search"]:
-        char_id = i["title"]
-        char_url   = BASE_URL + PARAMS_ENTITY + WIKIDATA + char_id
-        char_resp  = requests.get(char_url)
-        char_json  = char_resp.json()
-        char_json["id"] = char_id
-        results.append(char_json)
-    return results
-
-
 def get_entity(entity_str:str, type:str) -> dict:
     u"""Consulta a wikidata o wikipedia para obtener el listado de atributos 
     de una entidad identificada por su id o título (title).
@@ -92,7 +72,6 @@ def get_entity(entity_str:str, type:str) -> dict:
     return entity_json
 
 
-"""entity: json de una entidad. what_id:identificador de atributo"""
 def get_id(entity:dict, what_id:str) -> list:
     """Recupera identificadores únicos de entidad, contenidos en el 
     identificador de un atributo, llamado 'claim'.
@@ -125,6 +104,64 @@ def get_id(entity:dict, what_id:str) -> list:
         return info_unique
     else:
         return [None]
+
+
+def props_dict(lista_unicos:list, prefix:str) -> list:
+    u"""Devuelve una lista de atributos con sus valores principales de una
+    categoría para análisis
+
+    
+    Args:
+        lista_unicos (list): Lista de identificadores únicos.
+        prefix (str): Prefijo de categoría para análisis. Las categorías 
+        pueden ser: 
+        - gen: Género
+        - sp: Superpoder
+        - uni: Universo
+        - team: Equipo
+        - crea: Creador
+        
+    Returns:
+        list: Lista de diccionarios, cada uno con los atributos principales 
+        de un indicador.
+    """
+    unique_list = []
+    grupos = dividir_grupos(lista_unicos)
+    for grp in grupos:
+        unique_ents = get_entity(grp, "id")
+        for i in lista_unicos:
+            props = unique_ents.get("entities").get(i)
+            if props is not None:
+                ent_props = {
+                    prefix+"_id": props.get("id"),
+                    prefix+"_nombre": props.get("labels").get("es", {}).get("value"),
+                    prefix+"_desc": props.get("descriptions", {}).get("es", {}).get("value"),
+                    prefix+"_idioma": props.get("descriptions", {}).get("es", {}).get("language"),
+                    prefix+"_wiki": props.get("sitelinks", {}).get("eswiki", {}).get("title")
+                }
+                unique_list.append(ent_props)
+    return unique_list
+
+
+###
+def get_query_json(query_term):
+    query_url  = BASE_URL + PARAMS_QUERY + query_term
+    query_resp = requests.get(query_url)
+    query_json = query_resp.json()
+    return query_json
+ 
+ 
+def get_char_json(json_data):
+    """Site is one of wikidata or wikipedia"""
+    results = []
+    for i in json_data["query"]["search"]:
+        char_id = i["title"]
+        char_url   = BASE_URL + PARAMS_ENTITY + WIKIDATA + char_id
+        char_resp  = requests.get(char_url)
+        char_json  = char_resp.json()
+        char_json["id"] = char_id
+        results.append(char_json)
+    return results
 
 
 def get_entity_json(char_json:dict):
