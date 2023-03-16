@@ -91,7 +91,18 @@ def crear_enlace(wiki_link, wiki_tipo):
     return f"[{sitio}]({sitio_url})"
 
 
-def crear_descripcion(tipo, s_tab, seleccion):
+def get_unique(columna:pd.Series) -> list:
+    """Valores únicos de una columna, sin valor 'Faltante'"""
+    col_unique = (
+        columna
+        .loc[columna!="Faltante"]
+        .sort_values()
+        .unique()
+    )
+    return list(col_unique)
+
+
+def crear_descripcion(tipo:str, s_tab:st.tabs, seleccion:str, datos:pd.DataFrame):
     mensaje = {
         "char": "Personaje",
         "team": "Personajes que han sido integrantes de este equipo",
@@ -100,11 +111,11 @@ def crear_descripcion(tipo, s_tab, seleccion):
         "crea": "Personajes creados por esta persona",
     } 
     s_tab.markdown(u"### Descripción")
-    s_desc = char[tipo+"_desc"].loc[char[tipo+"_nombre"] == seleccion].unique().item()
+    s_desc = datos[tipo+"_desc"].loc[datos[tipo+"_nombre"] == seleccion].unique().item()
     s_tab.markdown(s_desc+".")
-    s_wiki = char[tipo+"_wiki"].loc[char[tipo+"_nombre"] == seleccion].unique().item()
-    s_id = char[tipo+"_id"].loc[char[tipo+"_nombre"] == seleccion].unique().item()
-    s_char = char["char_nombre"].loc[char[tipo+"_nombre"] == seleccion].drop_duplicates()
+    s_wiki = datos[tipo+"_wiki"].loc[datos[tipo+"_nombre"] == seleccion].unique().item()
+    s_id = datos[tipo+"_id"].loc[datos[tipo+"_nombre"] == seleccion].unique().item()
+    s_char = datos["char_nombre"].loc[datos[tipo+"_nombre"] == seleccion].drop_duplicates()
     
     enlace_eswiki   = crear_enlace(s_wiki, "eswiki")
     enlace_wikidata = crear_enlace(s_id, "wikidata")
@@ -123,12 +134,13 @@ def crear_descripcion(tipo, s_tab, seleccion):
         )
         
         char_to_show = (
-            char
-            .loc[char["char_nombre"].isin(s_char_nombres["Personaje"])]
+            datos
+            .loc[datos["char_nombre"].isin(s_char_nombres["Personaje"])]
             [["char_nombre", "char_wiki", "char_id"]]
             .drop_duplicates()
         )
         
+        # Lista colapsable de personajes
         with s_col2.expander("Ver personajes"):
             for index, row in char_to_show.iterrows():
                 char_nombre = row["char_nombre"]
@@ -137,12 +149,17 @@ def crear_descripcion(tipo, s_tab, seleccion):
                 st.markdown(f"{char_nombre} [ {char_wiki} - {char_data} ]")
 
 
-def get_faltantes(tipo, datos):
+def get_faltantes(tipo:str, datos:pd.DataFrame) -> pd.DataFrame:
+    """tipo: uni de char, sp, tram, uni, crea"""
+    # Columnas en las que se buscaran faltantes
     tipo_cols = [f"{tipo}_nombre", f"{tipo}_wiki", f"{tipo}_desc"]
     tipo_names = ["Nombre", "Wiki", u"Descripción"]
+    # Columnas adicionales para personajes
     if tipo == "char":
-        tipo_cols.append("sp_nombre")
+        tipo_cols.append("sp_nombre") 
+        tipo_cols.append("crea_nombre")
         tipo_names.append("Poderes")
+        tipo_names.append("Creador")
     tipo_data = datos[tipo_cols]
     tipo_data = tipo_data.loc[tipo_data[f"{tipo}_nombre"]!="Faltante"]
     tipo_sel = tipo_data.loc[tipo_data.isin(["Faltante"]).any(axis=1)]
@@ -158,7 +175,7 @@ char = char.replace({"": "Faltante"})
 str_cols = ["sp_nombre", "gen_nombre", 
             "sp_desc", "char_desc", "team_desc", "gen_desc", "crea_desc"]
 char[str_cols] = char[str_cols].apply(lambda x: x.str.capitalize())
-#char["char_nombre"].
+
 
 # Elementos resumen
 sp_conteo, team_conteo, crea_conteo, gen_conteo = [get_conteo(i, char) for i in [
@@ -204,7 +221,7 @@ char_desc = pers["char_desc"].unique().item()
 char_wiki = pers["char_wiki"].unique().item()
 char_wiki = pers["char_id"].unique().item()
 
-crear_descripcion("char", char_tab, char_sel)
+crear_descripcion("char", char_tab, char_sel, char)
 
 contenido = {
     u"Género": pers["gen_nombre"].drop_duplicates(),
@@ -226,10 +243,10 @@ for i_col, i_key, i_value in zip(char_cols, contenido.keys(), contenido.values()
 sp_tab.markdown("### Elige un poder")
 sp_sel = sp_tab.selectbox(
     "Elige un poder", 
-    options=char["sp_nombre"].sort_values().unique(),
+    options=get_unique(char["sp_nombre"]),
     label_visibility="collapsed")
 
-crear_descripcion("sp", sp_tab, sp_sel)
+crear_descripcion("sp", sp_tab, sp_sel, char)
 
 sp_tab.markdown(u"### Relación entre poderes")
 gp.graph_pairs(sp_sel, "sp", char)
@@ -238,16 +255,15 @@ with sp_tab:
     components.html(bg_style+sp_html.read(), height=475)
 
 
-
 ## Equipos
 team_tab.markdown("## Elige un equipo")
 team_sel = team_tab.selectbox(
     "Elige un equipo", 
-    options=char["team_nombre"].sort_values().unique(),
+    options=get_unique(char["team_nombre"]),
     label_visibility="collapsed"
     )
 
-crear_descripcion("team", team_tab, team_sel)
+crear_descripcion("team", team_tab, team_sel, char)
 
 team_tab.markdown(u"### Relación entre equipos")
 
@@ -260,11 +276,11 @@ with team_tab:
 crea_tab.markdown("### Elige un creador")
 crea_sel = crea_tab.selectbox(
     "Elige un creador", 
-    options=char["crea_nombre"].sort_values().unique(),
+    options=get_unique(char["crea_nombre"]),
     label_visibility="collapsed"
     )
 
-crear_descripcion("crea", crea_tab, crea_sel)
+crear_descripcion("crea", crea_tab, crea_sel, char)
 
 crea_tab.markdown(u"### Colaboración entre creadores")
 gp.graph_pairs(crea_sel, "crea", char)
