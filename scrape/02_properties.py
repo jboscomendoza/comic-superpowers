@@ -148,15 +148,15 @@ char_data = char_data.replace({"None":np.nan, None:np.nan})
 
 
 # Esportar a parquet, requiere pyarrow
-char_data.to_parquet("char_data.parquet", index=False)
+char_data.to_parquet("data/char_data.parquet", index=False)
 
 
 # Exportar a csv
-gn_df.to_csv("genders.csv", encoding="utf-8", index=False)
-un_df.to_csv("universes.csv", encoding="utf-8", index=False)
-sp_df.to_csv("superpowers.csv", encoding="utf-8", index=False)
-tm_df.to_csv("teams.csv", encoding="utf-8", index=False)
-cr_df.to_csv("creators.csv", encoding="utf-8", index=False)
+gn_df.to_csv("data/genders.csv", encoding="utf-8", index=False)
+un_df.to_csv("data/universes.csv", encoding="utf-8", index=False)
+sp_df.to_csv("data/superpowers.csv", encoding="utf-8", index=False)
+tm_df.to_csv("data/teams.csv", encoding="utf-8", index=False)
+cr_df.to_csv("data/creators.csv", encoding="utf-8", index=False)
 # char_sp_df.to_csv("char_sp.csv", encoding="utf-8", index=False)
 # char_team_df.to_csv("char_team.csv", encoding="utf-8", index=False)
 # char_info_df.to_csv("char_info.csv", encoding="utf-8", index=False)

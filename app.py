@@ -152,7 +152,7 @@ def get_faltantes(tipo, datos):
 
 
 # Data
-char = pd.read_parquet("char_data.parquet")
+char = pd.read_parquet("data/char_data.parquet")
 char = char.fillna("Faltante")
 char = char.replace({"": "Faltante"})
 str_cols = ["sp_nombre", "gen_nombre", 
