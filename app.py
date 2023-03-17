@@ -355,7 +355,8 @@ fal_dict = {
      "Creadores": "crea"
      }
 
-fal_tab.dataframe(
-    get_faltantes(fal_dict[fal_sel], datos=char),
-    use_container_width=True
-    )
+df_faltantes = get_faltantes(fal_dict[fal_sel], datos=char)
+main_col = list(df_faltantes.columns)[0]
+
+fal_tab.dataframe(df_faltantes.set_index(main_col).isin(["Faltante"]), 
+                  use_container_width=True)
