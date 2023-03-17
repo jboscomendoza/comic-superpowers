@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import graph_plots as gp
 from plotly import graph_objects as go
 import streamlit.components.v1 as components
@@ -35,12 +36,26 @@ def get_conteo(ent_tipo:str, datos:pd.DataFrame) -> pd.DataFrame:
     return conteo
 
 
-def get_bars(conteo, rango):
+def contar_como_otros(conteo:pd.DataFrame, frecuencia:int) -> pd.DataFrame:
+    """conteo: dataframe con conteos; frecuencia: cualquiera mayor a 1"""
+    col_main = conteo.columns[0]
+    conteo[col_main] = np.where(conteo["Conteo"]<frecuencia, 
+                                "Otros", 
+                                conteo[col_main])
+    conteo = (
+        conteo
+        .groupby(col_main, as_index=False)
+        .sum()
+        .sort_values("Conteo", ascending=False)
+        )
+    return conteo
+
+
+def get_bars(conteo, alto=300):
     tick_labs = []
-    conteo_r = conteo.loc[conteo["Conteo"].between(rango[0], rango[1])]
-    
-    x_values = conteo_r.iloc[:, 0]
-    y_values = conteo_r.iloc[:, 1]
+
+    x_values = conteo.iloc[:, 0]
+    y_values = conteo.iloc[:, 1]
     for i in x_values:
         if len(i) > 18:
             lab = i[0:18] + u"…"
@@ -57,7 +72,7 @@ def get_bars(conteo, rango):
         hovertemplate="%{text}: %{y}"
     ))
     bars.update_layout(
-        height=300, 
+        height=alto, 
         margin=dict(t=25, r=0, b=0, l=0),
         xaxis = dict(
             tickmode="array",
@@ -177,18 +192,6 @@ str_cols = ["sp_nombre", "gen_nombre",
 char[str_cols] = char[str_cols].apply(lambda x: x.str.capitalize())
 
 
-# Elementos resumen
-sp_conteo, team_conteo, crea_conteo, gen_conteo = [get_conteo(i, char) for i in [
-    "sp", "team", "crea", "gen"]]
-
-totales = {
-    "Personajes": len(char["char_nombre"].unique()),
-    "Poderes": len(sp_conteo),
-    "Equipos": len (team_conteo),
-    "Creadores": len (crea_conteo)
-}
-
-
 ### ###
 ### App
 ### ###
@@ -272,6 +275,7 @@ team_html = open("teams.html",'r',encoding='utf-8')
 with team_tab:
     components.html(bg_style+team_html.read(), height=475)
 
+
 ## Creadores
 crea_tab.markdown("### Elige un creador")
 crea_sel = crea_tab.selectbox(
@@ -290,24 +294,40 @@ with crea_tab:
 
 
 ## Resumen
+# Elementos resumen
+sp_conteo, team_conteo, crea_conteo, gen_conteo = [get_conteo(i, char) for i in [
+    "sp", "team", "crea", "gen"]]
+
+totales = {
+    "Personajes": len(char["char_nombre"].unique()),
+    "Poderes": len(sp_conteo),
+    "Equipos": len (team_conteo),
+    "Creadores": len (crea_conteo)
+}
+
+
 bar_tab.markdown(u"### Totales")
 metric_cols = bar_tab.columns(len(totales))
 for cont_k, cont_v, cont_col in zip(totales.keys(), totales.values(), metric_cols):
     cont_col.metric(cont_k, cont_v)
 
-bar_tab.markdown(u"### Rango de frecuencia")
-rango_frecuencia = bar_tab.slider(
-    "Rango de frecuencia",
-    label_visibility="collapsed",
-    min_value=1, 
-    max_value=100, 
-    value=(1, 100)
-    )
-sp_bar, team_bar, crea_bar, gen_bar = [get_bars(i, rango_frecuencia) for i in [
-    sp_conteo, team_conteo, crea_conteo, gen_conteo]]
-
 bar_tab.markdown(u"### Personajes por género")
-bar_tab.plotly_chart(gen_bar)
+bar_tab.plotly_chart(get_bars(gen_conteo, 200))
+
+bar_tab.markdown(u"### Tipo de agrupamiento")
+
+bar_col1, bar_col2 = bar_tab.columns([2, 1])
+como_otros = bar_col1.checkbox("Agrupar como 'Otros' elementos con frecuencia menor a:")
+frecuencia = bar_col2.number_input('Frecuencia', 
+                                  min_value=2, max_value=10, step=1, 
+                                  label_visibility="collapsed")
+
+if como_otros:
+    sp_conteo, team_conteo, crea_conteo = [contar_como_otros(i, frecuencia) for i in [
+        sp_conteo, team_conteo, crea_conteo]]
+
+sp_bar, team_bar, crea_bar = [get_bars(i) for i in [
+    sp_conteo, team_conteo, crea_conteo]]
 
 bar_tab.markdown("### Poderes más frecuentes")
 bar_tab.plotly_chart(sp_bar)
