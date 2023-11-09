@@ -44,7 +44,7 @@ plotly==5.14.1
 prompt-toolkit==3.0.36
 protobuf==3.20.3
 pure-eval==0.2.2
-pyarrow==11.0.0
+pyarrow==14.0.1
 pydeck==0.8.0
 Pygments==2.13.0
 Pympler==1.0.1
