@@ -22,8 +22,7 @@ def graph_team(team_to_graph, graph_datos):
                  width="100%", 
                  font_color="white",
                  bgcolor="#0e1117",
-                 notebook=False, 
-                 neighborhood_highlight=True)
+                 notebook=False)
     nt.from_nx(graph_team)
     for i in nt.nodes:
         i["borderWidth"] = 1
@@ -78,8 +77,7 @@ def graph_pairs(ent, tipo, graph_datos):
                  width="100%", 
                  font_color="white",
                  bgcolor="#0e1117",
-                 notebook=False, 
-                 neighborhood_highlight=True)
+                 notebook=False)
     nt.from_nx(graph)
     
     
