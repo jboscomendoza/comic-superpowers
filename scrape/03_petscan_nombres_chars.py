@@ -1,4 +1,5 @@
 import requests
+import time
 import polars as pl
 from bs4 import BeautifulSoup
 
@@ -19,6 +20,41 @@ for i in links:
         dict(nombre=i.find("a").text, url=i.find(class_="pagelink").get("href"))
     )
 
-wiki_links = pl.DataFrame(links_list).filter(pl.col("url").str.contains("Categor").not_()).sort(pl.col("nombre"))
+wiki_links = (
+    pl.DataFrame(links_list)
+    .filter(pl.col("url").str.contains("Categor").not_())
+    .sort(pl.col("nombre"))
+).with_columns(titulo=pl.col("url").str.extract("wiki\\/(.*)"))
+
+# Get wikidata ids
+# access token created at:
+# https://meta.wikimedia.org/wiki/Special:OAuthConsumerRegistration/propose/oauth2
+
+with open("access_token.txt") as token_file:
+    access_token = token_file.read()
+
+headers = {
+    "Content-Type": "application/json",
+    "Authorization": f"Bearer {access_token}",
+}
+
+titles = wiki_links.get_column("titulo")
+wikidata_ids = []
+wait_time = 0.15
+
+for title in titles:
+    print(f"Waiting for {title}")
+    time.sleep(wait_time)
+    link_resp = requests.get(
+        f"https://es.wikipedia.org/api/rest_v1/page/html/{title}", headers=headers
+    )
+    if link_resp.status_code == 200:
+        sopa = BeautifulSoup(link_resp.text)
+        wikidata_id = sopa.find(class_="uid").text
+    else:
+        wikidata_id = "None"
+    wikidata_ids.append(wikidata_id)
+
+wiki_links = wiki_links.with_columns(wikidata_id=pl.Series(wikidata_ids))
 
 wiki_links.write_parquet("scrape/wiki_links.parquet")
