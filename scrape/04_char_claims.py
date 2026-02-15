@@ -42,6 +42,55 @@ def get_properties(
     return property_df
 
 
+def get_entities(
+    id_list: list,
+    label: str,
+):
+    entities_url = "https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&ids={wikidata_ids}&props=sitelinks%7Clabels&languages=es%7Cen&sitefilter=eswiki%7Cenwiki&formatversion=2"
+    divisiones = []
+    column_label = f"{label}_id"
+
+    for i in range(0, len(id_list), 50):
+        grupo = id_list[i : i + 50]
+        divisiones.append("%7C".join(grupo))
+
+    entities_df_list = []
+    for division in divisiones:
+        print("Waiting...")
+        time.sleep(0.15)
+        entities_resp = requests.get(
+            entities_url.format(wikidata_ids=division), headers=headers
+        )
+        ent_json = entities_resp.json().get("entities")
+
+        entities_list = []
+        for wd_id in division.split("%7C"):
+            entity_dict = {
+                column_label: wd_id,
+                "nombre_es": ent_json[wd_id]
+                .get("labels")
+                .get("es", {})
+                .get("value", "None"),
+                "nombre_en": ent_json[wd_id]
+                .get("labels")
+                .get("en", {})
+                .get("value", "None"),
+                "link_eswiki": ent_json[wd_id]
+                .get("sitelinks")
+                .get("eswiki", {})
+                .get("title", "None"),
+                "link_enwiki": ent_json[wd_id]
+                .get("sitelinks")
+                .get("enwiki", {})
+                .get("title", "None"),
+            }
+            entities_list.append(entity_dict)
+
+        entities_df_list.append(pl.DataFrame(entities_list))
+    entities_df = pl.concat(entities_df_list)
+    return entities_df
+
+
 p_team = "P463"
 p_power = "P2563"
 p_creator = "P170"
@@ -54,6 +103,29 @@ df_team = get_properties(p_team, "team", wikidata_ids, nombres, headers)
 df_power = get_properties(p_power, "power", wikidata_ids, nombres, headers)
 df_creator = get_properties(p_creator, "creator", wikidata_ids, nombres, headers)
 
+
+team_ids = list(
+    df_team.unique("team_id").filter(pl.col("team_id") != "None").get_column("team_id")
+)
+power_ids = list(
+    df_power.unique("power_id")
+    .filter(pl.col("power_id") != "None")
+    .get_column("power_id")
+)
+creator_ids = list(
+    df_creator.unique("creator_id")
+    .filter(pl.col("creator_id") != "None")
+    .get_column("creator_id")
+)
+
+df_e_team = get_entities(team_ids, "team")
+df_e_power = get_entities(power_ids, "power")
+df_e_creator = get_entities(creator_ids, "creator")
+
 df_team.write_parquet("scrape/wiki_p_team.parquet")
 df_power.write_parquet("scrape/wiki_p_power.parquet")
 df_creator.write_parquet("scrape/wiki_p_creator.parquet")
+
+df_e_team.write_parquet("scrape/wiki_e_team.parquet")
+df_e_power.write_parquet("scrape/wiki_e_power.parquet")
+df_e_creator.write_parquet("scrape/wiki_e_creator.parquet")
